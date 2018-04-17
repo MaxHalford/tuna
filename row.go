@@ -1,4 +1,4 @@
-package main
+package line
 
 import (
 	"bufio"
@@ -10,8 +10,8 @@ import (
 // A Row maps a feature name to a raw value.
 type Row map[string]string
 
-// A RowIterator returns rows one by one.
-type RowIterator interface {
+// A RowReader returns rows one by one.
+type RowReader interface {
 	Read() (row Row, stop bool, err error)
 }
 

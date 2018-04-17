@@ -1,4 +1,4 @@
-package main
+package line
 
 import "runtime"
 
@@ -6,12 +6,12 @@ import "runtime"
 type Instance struct {
 	t  uint64
 	ID string
-	x  Vector
-	y  float64
+	X  Vector
+	Y  float64
 }
 
-// NewInstanceStream returns a channel that sends Instances.
-func NewInstanceStream(ri RowIterator, rp RowParser) <-chan Instance {
+// newInstanceStream returns a channel that sends Instances.
+func newInstanceStream(ri RowReader, rp RowParser) <-chan Instance {
 	var (
 		nCores = runtime.GOMAXPROCS(-1)
 		stream = make(chan Instance, nCores*4)

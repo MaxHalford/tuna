@@ -1,21 +1,20 @@
-package main
+package line
 
-import "sort"
+// A Vector maps feature positions tZo values. This allows a sparse
+// representation of a set of features by only including the non-zero ones.
+type Vector map[uint32]float64
 
-// A Vector maps feature names to values. This allows a sparse representation
-// of a set of features.
-type Vector map[string]float64
-
-// sortedKeys returns the keys of a Vector sorted in lexicographical order.
-func (vec Vector) sortedKeys() []string {
-	var (
-		keys = make([]string, len(vec))
-		i    int
-	)
-	for k := range vec {
-		keys[i] = k
-		i++
+// Dot-product between two vectors.
+func dot(a, b Vector) (sum float64) {
+	// Iterate over the smallest vector
+	if len(a) < len(b) {
+		for k, v := range a {
+			sum += b[k] * v
+		}
+		return
 	}
-	sort.Strings(keys)
-	return keys
+	for k, v := range b {
+		sum += a[k] * v
+	}
+	return
 }

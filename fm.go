@@ -1,4 +1,4 @@
-package main
+package line
 
 import "math"
 
@@ -34,9 +34,9 @@ func NewFMClassifier(k uint32, eta float64) *FMClassifier {
 
 // FitPartial of FMClassifier with Stochastic Gradient Descent. The gradients
 // are indicated in equation 4 of Rendle's paper.
-func (fm *FMClassifier) FitPartial(x Vector, y float64) (yHat float64) {
+func (fm *FMClassifier) FitPartial(x Vector, y float64) (yPred float64) {
 
-	yHat = fm.PredictPartial(x)
+	yPred = fm.PredictPartial(x)
 
 	v := make(map[uint32]float64)
 	for i, xi := range x {
@@ -45,7 +45,7 @@ func (fm *FMClassifier) FitPartial(x Vector, y float64) (yHat float64) {
 		}
 	}
 
-	g := yHat - y
+	g := yPred - y
 	g2 := g * g
 
 	fm.w0 -= fm.eta / (math.Sqrt(fm.c0) + 1) * g
@@ -65,14 +65,14 @@ func (fm *FMClassifier) FitPartial(x Vector, y float64) (yHat float64) {
 
 // PredictPartial of FTRLProximalClassifier. This is equation 1 of Rendle's
 // paper.
-func (fm *FMClassifier) PredictPartial(x Vector) (yHat float64) {
+func (fm *FMClassifier) PredictPartial(x Vector) (yPred float64) {
 
-	yHat += fm.w0
+	yPred += fm.w0
 
 	v := make(map[uint32]float64)
 	vv := make(map[uint32]float64)
 	for i, xi := range x {
-		yHat += fm.w[i] * x[i]
+		yPred += fm.w[i] * x[i]
 		for f := uint32(0); f < fm.k; f++ {
 			v[f] += fm.ww[f][i] * xi
 			vv[f] += (math.Pow(fm.ww[f][i], 2)) * (math.Pow(xi, 2))
@@ -80,8 +80,8 @@ func (fm *FMClassifier) PredictPartial(x Vector) (yHat float64) {
 	}
 
 	for f := uint32(0); f < fm.k; f++ {
-		yHat += 0.5 * (math.Pow(v[f], 2) - vv[f])
+		yPred += 0.5 * (math.Pow(v[f], 2) - vv[f])
 	}
 
-	return sigmoid(yHat)
+	return sigmoid(yPred)
 }

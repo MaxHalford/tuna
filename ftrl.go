@@ -1,9 +1,9 @@
-package main
+package line
 
 import "math"
 
-// FTRLProximalClassifier implements the Follow The Regularized Leader
-// algorithm described in
+// FTRLProximalClassifier implements the "Follow The Regularized Leader
+// Proximal" algorithm described in
 // http://www.eecs.tufts.edu/~dsculley/papers/ad-click-prediction.pdf.
 type FTRLProximalClassifier struct {
 	alpha float64
@@ -11,9 +11,9 @@ type FTRLProximalClassifier struct {
 	l1    float64
 	l2    float64
 
-	n map[string]float64 // Squared sum of past gradients
-	z map[string]float64 // Weights
-	w map[string]float64 // Lazy weights
+	n Vector // Squared sum of past gradients
+	z Vector // Weights
+	w Vector // Lazy weights
 }
 
 // NewFTRLProximalClassifier instantiates and returns a *FTRLProximalClassifier.
@@ -23,19 +23,18 @@ func NewFTRLProximalClassifier(alpha, beta, l1, l2 float64) *FTRLProximalClassif
 		beta:  beta,
 		l1:    l1,
 		l2:    l2,
-		n:     make(map[string]float64),
-		z:     make(map[string]float64),
-		w:     make(map[string]float64),
+		n:     make(Vector),
+		z:     make(Vector),
 	}
 }
 
 // FitPartial of FTRLProximalClassifier.
-func (ftrl *FTRLProximalClassifier) FitPartial(x Vector, y float64) (yHat float64) {
-	yHat = ftrl.PredictPartial(x)
-	g := yHat - y // Gradient
-	g2 := g * g
-	// Update z and n
-	for i := range x {
+func (ftrl *FTRLProximalClassifier) FitPartial(x Vector, y float64) (yPred float64) {
+	yPred = ftrl.PredictPartial(x)
+	loss := yPred - y
+	for i, xi := range x {
+		g := loss * xi // Gradient of loss w.r.t wi
+		g2 := g * g
 		sigma := (math.Sqrt(ftrl.n[i]+g2) - math.Sqrt(ftrl.n[i])) / ftrl.alpha
 		ftrl.z[i] += g - sigma*ftrl.w[i]
 		ftrl.n[i] += g2
@@ -44,28 +43,26 @@ func (ftrl *FTRLProximalClassifier) FitPartial(x Vector, y float64) (yHat float6
 }
 
 // PredictPartial of FTRLProximalClassifier.
-func (ftrl *FTRLProximalClassifier) PredictPartial(x Vector) (yHat float64) {
+func (ftrl *FTRLProximalClassifier) PredictPartial(x Vector) (yPred float64) {
 	var (
+		w   = make(Vector)
 		wTx float64 // Inner product
-		w   = make(map[string]float64)
 	)
-	for i := range x {
-		// Get sign of weight z[i]
+	for i, xi := range x {
 		z, ok := ftrl.z[i]
 		if !ok {
-			ftrl.z[i] = 0.0
-			ftrl.n[i] = 0.0
+			ftrl.z[i] = 0
+			ftrl.n[i] = 0
 		}
 		sign := 1.0
 		if z < 0 {
 			sign = -1.0
 		}
-		// Build w[i] on the fly using z[i] and n[i]
 		if sign*z <= ftrl.l1 {
-			w[i] = 0 // l1 regularization
+			w[i] = 0
 		} else {
 			w[i] = (sign*ftrl.l1 - z) / ((ftrl.beta+math.Sqrt(ftrl.n[i]))/ftrl.alpha + ftrl.l2)
-			wTx += w[i]
+			wTx += w[i] * xi
 		}
 	}
 	ftrl.w = w
