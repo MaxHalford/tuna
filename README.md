@@ -77,6 +77,9 @@ None.
 - Passive-Aggressive
 - Winnow
 - Mondrian trees
+    - http://papers.nips.cc/paper/3622-the-mondrian-process.pdf
+    - https://arxiv.org/pdf/1406.2673.pdf
+    - https://scikit-garden.github.io/examples/MondrianTreeRegressor/
 - FFM
 
 ## License
