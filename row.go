@@ -1,57 +1,21 @@
-package line
+package tuna
 
-import (
-	"bufio"
-	"encoding/csv"
-	"io"
-	"os"
-)
+import "fmt"
 
-// A Row maps a feature name to a raw value.
+// A Row maps a column name to a raw value.
 type Row map[string]string
 
-// A RowReader returns rows one by one.
-type RowReader interface {
-	Read() (row Row, stop bool, err error)
+// Set set the field of a Row and then returns the Row.
+func (r Row) Set(k string, v string) Row {
+	r[k] = v
+	return r
 }
 
-// A RowParser parses a row.
-type RowParser func(row Row) (ID string, x Vector, y float64)
-
-// A CSVRowReader reads Rows from a CSV file.
-type CSVRowReader struct {
-	names     []string
-	csvReader *csv.Reader
-	row       Row
-}
-
-// NewCSVRowReader instantiates and returns a CSVRowReader returning rows from
-// the given path.
-func NewCSVRowReader(path string) (*CSVRowReader, error) {
-	// Open the file
-	f, err := os.Open(path)
-	if err != nil {
-		f.Close()
-		return nil, err
+// Suffix adds a suffix to each field of a Row and then returns the Row.
+func (r Row) Suffix(suffix string, sep string) Row {
+	var nr = make(map[string]string)
+	for k, v := range r {
+		nr[fmt.Sprintf("%s%s%s", k, sep, suffix)] = v
 	}
-	// Read the file
-	r := csv.NewReader(bufio.NewReader(f))
-	// The first row is used for column names
-	names, err := r.Read()
-	return &CSVRowReader{names, r, make(Row)}, nil
-}
-
-// Read of CSVRowReader.
-func (reader *CSVRowReader) Read() (row Row, stop bool, err error) {
-	r, err := reader.csvReader.Read()
-	if err != nil {
-		if err == io.EOF {
-			return nil, true, err
-		}
-		return nil, false, err
-	}
-	for i, name := range reader.names {
-		reader.row[name] = r[i]
-	}
-	return reader.row, false, nil
+	return nr
 }

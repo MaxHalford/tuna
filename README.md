@@ -1,86 +1,55 @@
-# line
+# tuna
 
-`line` is a simple library for doing [online learning](https://www.wikiwand.com/en/Online_machine_learning). In short the goal of online learning is to train a machine learning model one observation at a time. With `line` the user total freedom as to how to preprocess the data. `line` takes over once the user has provided a `RowReader` to stream rows and a `RowParser` to parse them.
+`tuna` is a simple library for computing machine learning features in an online manner. Sometimes datasets can be rather large and it isn't convenient to handle them in memory. The idea here is to cover common use cases (e.g. a group by followed by a mean) while also making it easy to build custom features.
 
-:warning: For the while only binary classification is supported.
+:warning: I'm working on this for an ongoing Kaggle competition, things are still in flux and the documentation isn't finished
 
-## Usage
+## Quickstart
 
-Check out [GoDoc](https://godoc.org/github.com/MaxHalford/gago) for a full overview.
+## API
 
-- A `Row` is a `map[string]string` that is streamed from somewhere (for example a CSV file)
-- A `RowReader` implements a `Read()` method which returns a `Row`
-- An `Instance` is a parsed version of a `Row`
-- A `RowParser` is a method that parses a `Row` into an `Instance`
-- A `Model` implements `FitPartial` and `PredictPartial`
-- A `Metric` computes an online metric
+:point_up: Please check out the [godoc page]() in addition to the following documentation.
 
-The idea is that the user only has to implement a `RowReader` and a `RowParser`. The `RowReader` can be anything as long as it implements a `Read` method that returns a `Row`. For example `line` provides a `CSVRowReader` to stream from a CSV file row by row. The `RowParser` has the following signature:
+### Extractors
 
-```go
-func(row Row) (ID string, x Vector, y float64)
-```
+**Mean**
 
-It has to take as input a `Row` and output a row identifier, a `Vector`, and a target. A `Vector` has the following signature:
+The `Mean` struct computes an approximate average. For every `value` the update formula is `mean = mean + (value - mean) / n`. For convenience you instantiate a `Mean` with the `NewMean` method.
+
+**Writing a custom feature extractor**
+
+A feature extractor has to implement the following interface.
 
 ```go
-type Vector map[uint32]float64
+type Extractor interface {
+    Update(Row) error
+    Collect() <-chan Row
+    Size() uint
+}
 ```
 
-A `Vector` thus maps unsigned integers to floating point values. This allows a sparse representation which is commonly needed for large-scale online learning. The user has the responsibility (and freedom) to decide what features to include. Typically features should be hashed to obtain a `uint32` value.
+The `Update` method updates the running statistic that is being computed.
 
-Once a `RowReader` and a `RowParser` have been defined the user can pick a `Model` and call the `Train` method which as the following signature:
+The `Collect` methods returns a channel that streams `Row`s. Each such `Row` will then be stored in a CSV file (depending on your application). Most `Extractor`s only return a single result. For example `Mean` returns a `Row` with one key named `"mean"` and one value representing the current mean. On the other `GroupBy` returns multiple `Row`s (one per group).
 
-```go
-func Train(model Model, ri RowReader, rp RowParser, metric Metric, monitor *os.File, monitorEvery uint64)
-```
+The `Size` method is simply here to monitor the number of computed values. Most `Extractor`s simply return 1 whereas `GroupBy` returns the sum of the sizes of each group.
 
-The metric is used to monitor the performance of the `Model` every `monitorEvery` instances. The metric is applied to each instance *before* it is fed to the model. The output is piped via the `monitor` argument (`os.Stdout` can be used in most cases).
+Naturally the easiest way to proceed is to copy/paste one of the existing `Extractor`s and edit it.
 
-Once training has terminated, the `Predict` method can be used to make predictions on another stream of instances:
+### Using `GroupBy`
 
-```go
-func Predict(model Model, ri RowReader, rp RowParser, output *os.File, monitor *os.File, monitorEvery uint64)
-```
+### Using `Union`
 
-The `ID` and the prediction of each instance will be written to the `output` file (typically you can use `os.Create`). Progress is sent to the `monitor` file.
+### Streams
 
-## Models
+- `CSVStream` (use `NewCSVStream`)
 
-### Follow The Regularised Leader Proximal (FTRL-Proximal)
+## Roadmap
 
-FTRL-Proximal is a logistic regression with an adaptive learning rate and L1-L2 regularisation.
-
-```go
-model := line.NewFTRLProximalClassifier(0.2, 0.8, 0.01, 0) // alpha, beta, l1 regularisation, l2 regularisation
-```
-
-- [Paper](http://www.eecs.tufts.edu/~dsculley/papers/ad-click-prediction.pdf)
-- [Example](examples/kaggle-fraud-detection)
-
-## Metrics
-
-- `line.Accuracy`
-- `line.LogLoss`
-
-## Row readers
-
-- `line.CSVRowReader`
-
-## Dependencies
-
-None.
-
-## To do
-
-- Perceptron
-- Passive-Aggressive
-- Winnow
-- Mondrian trees
-    - http://papers.nips.cc/paper/3622-the-mondrian-process.pdf
-    - https://arxiv.org/pdf/1406.2673.pdf
-    - https://scikit-garden.github.io/examples/MondrianTreeRegressor/
-- FFM
+- Unit tests
+- [Running median](https://rhettinger.wordpress.com/tag/running-median/)
+- DSL
+- CLI tool based on the DSL
 
 ## License
 
