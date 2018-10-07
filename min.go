@@ -36,9 +36,7 @@ func (m Min) Size() uint { return 1 }
 // NewMin returns a Min that computes the mean of a given field.
 func NewMin(field string) *Min {
 	return &Min{
-		Parse: func(row Row) (float64, error) {
-			return stringToFloat64(row[field])
-		},
-		min: math.Inf(1),
+		Parse: func(row Row) (float64, error) { return stringToFloat64(row[field]) },
+		min:   math.Inf(1),
 	}
 }

@@ -34,10 +34,8 @@ func (ptp PTP) Size() uint { return 1 }
 // NewPTP returns a PTP that computes the PTP value of a given field.
 func NewPTP(field string) *PTP {
 	return &PTP{
-		Parse: func(row Row) (float64, error) {
-			return stringToFloat64(row[field])
-		},
-		min: NewMin(field),
-		max: NewMax(field),
+		Parse: func(row Row) (float64, error) { return stringToFloat64(row[field]) },
+		min:   NewMin(field),
+		max:   NewMax(field),
 	}
 }

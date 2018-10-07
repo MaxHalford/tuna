@@ -19,3 +19,9 @@ func (r Row) Suffix(suffix string, sep string) Row {
 	}
 	return nr
 }
+
+// An ErrRow is a Row that has an accompanying error.
+type ErrRow struct {
+	Row
+	err error
+}

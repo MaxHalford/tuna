@@ -55,7 +55,7 @@ func NewGroupBy(newExtractor func() Extractor, by string) *GroupBy {
 type SequentialGroupBy struct {
 	NewExtractor func() Extractor
 	By           string
-	Writer       Writer
+	Sink         Sink
 	key          string
 	extractor    Extractor
 }
@@ -65,7 +65,7 @@ func (sgb *SequentialGroupBy) Update(row Row) error {
 	key := row[sgb.By]
 	// Call the Trigger if key has changed
 	if sgb.key != key && sgb.extractor != nil {
-		if err := sgb.Writer.Write(sgb); err != nil {
+		if err := sgb.Sink.Write(sgb.Collect()); err != nil {
 			return err
 		}
 		sgb.extractor = sgb.NewExtractor()
@@ -96,10 +96,10 @@ func (sgb SequentialGroupBy) Size() uint {
 
 // NewSequentialGroupBy returns a SequentialGroupBy that maintains an Extractor
 // for the given variable.
-func NewSequentialGroupBy(newExtractor func() Extractor, by string, w Writer) *SequentialGroupBy {
+func NewSequentialGroupBy(newExtractor func() Extractor, by string, sink Sink) *SequentialGroupBy {
 	return &SequentialGroupBy{
 		NewExtractor: newExtractor,
 		By:           by,
-		Writer:       w,
+		Sink:         sink,
 	}
 }

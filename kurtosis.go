@@ -47,8 +47,6 @@ func (k Kurtosis) Size() uint { return 1 }
 // NewKurtosis returns a Kurtosis that computes the mean of a given field.
 func NewKurtosis(field string) *Kurtosis {
 	return &Kurtosis{
-		Parse: func(row Row) (float64, error) {
-			return strconv.ParseFloat(row[field], 64)
-		},
+		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
 	}
 }

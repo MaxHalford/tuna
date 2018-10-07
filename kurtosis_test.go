@@ -15,22 +15,14 @@ type ExtractorTestCase struct {
 // Run runs the Extractor against then Stream and then checks the
 // results of the Collect method.
 func (tc ExtractorTestCase) Run(t *testing.T) {
-	for {
-		row, stop, err := tc.stream.Next()
-		// Check for stopage
-		if stop {
-			break
+	for row := range tc.stream {
+		if row.err != nil {
+			t.Error(row.err)
 		}
-		// Check for error
-		if err != nil {
-			t.Error(err)
-		}
-		// Update the Extractor
-		if err = tc.fe.Update(row); err != nil {
+		if err := tc.fe.Update(row.Row); err != nil {
 			t.Error(err)
 		}
 	}
-	// Check the output
 	for r := range tc.fe.Collect() {
 		fmt.Println(r)
 	}
@@ -40,12 +32,12 @@ func TestKurtosis(t *testing.T) {
 	var testCases = []ExtractorTestCase{
 		{
 			fe: NewKurtosis("flux"),
-			stream: &RowStream{[]Row{
+			stream: StreamRows(
 				Row{"flux": "1.0"},
 				Row{"flux": "2.0"},
 				Row{"flux": "10.0"},
 				Row{"flux": "-4.0"},
-			}},
+			),
 		},
 	}
 	for i, tc := range testCases {

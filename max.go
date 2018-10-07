@@ -36,9 +36,7 @@ func (m Max) Size() uint { return 1 }
 // NewMax returns a Max that computes the mean of a given field.
 func NewMax(field string) *Max {
 	return &Max{
-		Parse: func(row Row) (float64, error) {
-			return stringToFloat64(row[field])
-		},
-		max: math.Inf(-1),
+		Parse: func(row Row) (float64, error) { return stringToFloat64(row[field]) },
+		max:   math.Inf(-1),
 	}
 }

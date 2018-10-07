@@ -37,8 +37,6 @@ func (m Mean) Size() uint { return 1 }
 // NewMean returns a Mean that computes the mean of a given field.
 func NewMean(field string) *Mean {
 	return &Mean{
-		Parse: func(row Row) (float64, error) {
-			return strconv.ParseFloat(row[field], 64)
-		},
+		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
 	}
 }

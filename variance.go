@@ -41,8 +41,6 @@ func (v Variance) Size() uint { return 1 }
 // NewVariance returns a Variance that computes the mean of a given field.
 func NewVariance(field string) *Variance {
 	return &Variance{
-		Parse: func(row Row) (float64, error) {
-			return strconv.ParseFloat(row[field], 64)
-		},
+		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
 	}
 }

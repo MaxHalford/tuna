@@ -46,8 +46,6 @@ func (s Skew) Size() uint { return 1 }
 // NewSkew returns a Skew that computes the mean of a given field.
 func NewSkew(field string) *Skew {
 	return &Skew{
-		Parse: func(row Row) (float64, error) {
-			return strconv.ParseFloat(row[field], 64)
-		},
+		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
 	}
 }

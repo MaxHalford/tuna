@@ -49,9 +49,7 @@ func (d Diff) Size() uint { return d.Extractor.Size() }
 func NewDiff(field string, newExtractor func(s string) Extractor) *Diff {
 	fn := fmt.Sprintf("%s_diff", field)
 	return &Diff{
-		Parse: func(row Row) (float64, error) {
-			return stringToFloat64(row[field])
-		},
+		Parse:     func(row Row) (float64, error) { return stringToFloat64(row[field]) },
 		FieldName: fn,
 		Extractor: newExtractor(fn),
 	}

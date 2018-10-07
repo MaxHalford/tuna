@@ -16,7 +16,7 @@
 
 The `Mean` struct computes an approximate average. For every `value` the update formula is `mean = mean + (value - mean) / n`. For convenience you can instantiate a `Mean` with the `NewMean` method.
 
-#### Writing a custom feature extractor
+#### Writing a custom `Extractor`
 
 A feature extractor has to implement the following interface.
 
@@ -52,23 +52,27 @@ Computing running statistics
 
 The `StreamZip` struct can be used to stream over multiple files without having to concatenate them. Indeed in practice large datasets are more often than not split into chunks for practical reasons. The issue is that if you're using a `GroupBy` and that the group keys are scattered accross multiple files then processing each file individually won't produce the correct result.
 
-To use a `StreamZip` you simply have to instantiate it with a `Stream` slice. Calling `Next` will iterate over each `Row` of each `Stream` and then stop once each `Stream` is depleted.
+To use a `StreamZip` you simply have to instantiate it with one or more `Stream`s. Calling `Next` will iterate over each `Row` of each `Stream` and then stop once each `Stream` is depleted. Naturally you can combine different types of `Stream`s.
 
 ```go
-cs, _ := tuna.NewCSVStream("path/to/file.csv")
+cs, _ := tuna.StreamCSV("path/to/file.csv")
 
-sz := tuna.StreamZip{[]tuna.Stream{
-    tuna.RowStream{[]tuna.Row{
+sz := tuna.StreamZip{
+    tuna.StreamRows(
         tuna.Row{"x0": "42.42", "x1": "24.24"},
         tuna.Row{"x0": "13.37", "x1": "31.73"},
-    }},
+    ),
     cs
-}}
+}
 ```
 
-### Writers
+#### Writing a custom `Stream`
 
-#### `CSVWriter`
+### Sinks
+
+#### `CSVSink`
+
+#### Writing a custom `Sink`
 
 ## Roadmap
 
@@ -77,6 +81,7 @@ sz := tuna.StreamZip{[]tuna.Stream{
 - DSL
 - CLI tool based on the DSL
 - Handle dependencies between extractors (for example `Variance` could reuse `Mean`)
+- Identify bottlenecks
 - Cute logo
 
 ## License

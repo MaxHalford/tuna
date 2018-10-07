@@ -16,32 +16,27 @@ type Extractor interface {
 
 // Run applies an against a stream. It will display the current progression at
 // every multiple of checkpoint.
-func Run(extractor Extractor, stream Stream, writer Writer, checkpoint uint) error {
+func Run(extractor Extractor, stream Stream, sink Sink, checkpoint uint) error {
 	// Run the exature extractors over the stream
 	var (
 		n  uint
 		t0 = time.Now()
 		p  = message.NewPrinter(language.English)
 	)
-	for {
-		row, stop, err := stream.Next()
-		// Check for stopage
-		if stop {
-			break
-		}
-		// Check for error
-		if err != nil {
-			return err
+	for row := range stream {
+		// Check there is no error
+		if row.err != nil {
+			return row.err
 		}
 		// Update the Extractor
-		if err = extractor.Update(row); err != nil {
+		if err := extractor.Update(row.Row); err != nil {
 			return err
 		}
 		n++
 		if n%checkpoint == 0 {
 			// Write the current results
-			if writer != nil {
-				if err = writer.Write(extractor); err != nil {
+			if sink != nil {
+				if err := sink.Write(extractor.Collect()); err != nil {
 					return err
 				}
 			}

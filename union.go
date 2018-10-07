@@ -1,5 +1,6 @@
 package tuna
 
+// A Union maintains multiple Extractors in parallel.
 type Union struct {
 	Extractors []Extractor
 }
