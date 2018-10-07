@@ -25,7 +25,7 @@
 <br/>
 <br/>
 
-`tuna` is a simple library for computing machine learning features in an online manner. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (*e.g.* a group by followed by a mean) while keeping it easy to build custom features.
+`tuna` is a simple library for computing machine learning features in an online manner. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (*e.g.* a group by followed by a mean) while keeping it simple to build custom features.
 
 :warning: I'm working on this for an ongoing Kaggle competition, things are still in flux and the documentation isn't finished
 
