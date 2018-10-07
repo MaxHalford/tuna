@@ -1,4 +1,21 @@
-# tuna
+<div align="center">
+  <!-- Logo -->
+  <img src="https://docs.google.com/drawings/d/e/2PACX-1vRAWmJOWkS7IByWDZCJQqZmyp2-LO7VPWGgxb9OfuLLFLiquasU3NrS132JyvzkoOx9HcM5DPY2V1-B/pub?w=412&amp;h=213" alt="logo"/>
+</div>
+
+<div align="center">
+  <!-- godoc -->
+  <a href="https://godoc.org/github.com/MaxHalford/tuna">
+    <img src="https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square" alt="godoc" />
+  </a>
+  <!-- License -->
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="http://img.shields.io/:license-mit-ff69b4.svg?style=flat-square" alt="license"/>
+  </a>
+</div>
+
+<br/>
+<br/>
 
 `tuna` is a simple library for computing machine learning features in an online manner. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (*e.g.* a group by followed by a mean) while also making it easy to build custom features.
 
@@ -82,7 +99,6 @@ sz := tuna.StreamZip{
 - CLI tool based on the DSL
 - Handle dependencies between extractors (for example `Variance` could reuse `Mean`)
 - Identify bottlenecks
-- Cute logo
 
 ## License
 
