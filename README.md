@@ -12,12 +12,20 @@
   <a href="https://opensource.org/licenses/MIT">
     <img src="http://img.shields.io/:license-mit-ff69b4.svg?style=flat-square" alt="license"/>
   </a>
+  <!-- Build status -->
+  <a href="https://travis-ci.org/MaxHalford/tuna">
+    <img src="https://img.shields.io/travis/MaxHalford/tuna/master.svg?style=flat-square" alt="build_status" />
+  </a>
+  <!-- Test coverage -->
+  <a href="https://coveralls.io/github/MaxHalford/tuna?branch=master">
+    <img src="https://coveralls.io/repos/github/MaxHalford/tuna/badge.svg?branch=master&style=flat-square" alt="test_coverage" />
+  </a>
 </div>
 
 <br/>
 <br/>
 
-`tuna` is a simple library for computing machine learning features in an online manner. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (*e.g.* a group by followed by a mean) while also making it easy to build custom features.
+`tuna` is a simple library for computing machine learning features in an online manner. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (*e.g.* a group by followed by a mean) while keeping it easy to build custom features.
 
 :warning: I'm working on this for an ongoing Kaggle competition, things are still in flux and the documentation isn't finished
 
