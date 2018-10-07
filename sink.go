@@ -2,8 +2,8 @@ package tuna
 
 import (
 	"encoding/csv"
+	"io"
 	"os"
-	"sort"
 )
 
 // A Sink can persist the output of an Extractor's Collect method.
@@ -13,37 +13,31 @@ type Sink interface {
 
 // CSVSink persist the output of an Extractor's Collect method to a CSV file.
 type CSVSink struct {
-	Path   string
-	cols   []string
-	tmp    []string
-	writer *csv.Writer
+	w    *csv.Writer
+	cols []string
+	tmp  []string
 }
 
 // Write to a CSV located at Path.
 func (cw *CSVSink) Write(rows <-chan Row) error {
-	if cw.writer == nil {
-
-		// Initialize the file and the associated Sink
-		file, err := os.Create(cw.Path)
-		if err != nil {
-			return err
-		}
-		cw.writer = csv.NewWriter(file)
-		defer cw.writer.Flush()
-
-		// Extract and persist the column names and the first Row
+	defer func() { cw.w.Flush() }()
+	if cw.cols == nil {
+		// Extract and write the column names and the first row
 		cw.cols = make([]string, 0)
+		cw.tmp = make([]string, 0)
 		for r := range rows {
-			for k := range r {
+			for k, v := range r {
 				cw.cols = append(cw.cols, k)
+				cw.tmp = append(cw.tmp, v)
 			}
-			sort.Strings(cw.cols)
-			if err := cw.writer.Write(cw.cols); err != nil {
+			if err := cw.w.Write(cw.cols); err != nil {
+				return err
+			}
+			if err := cw.w.Write(cw.tmp); err != nil {
 				return err
 			}
 			break
 		}
-		cw.tmp = make([]string, len(cw.cols))
 	}
 
 	// Write each Row down
@@ -51,7 +45,7 @@ func (cw *CSVSink) Write(rows <-chan Row) error {
 		for i, c := range cw.cols {
 			cw.tmp[i] = r[c]
 		}
-		if err := cw.writer.Write(cw.tmp); err != nil {
+		if err := cw.w.Write(cw.tmp); err != nil {
 			return err
 		}
 	}
@@ -59,7 +53,17 @@ func (cw *CSVSink) Write(rows <-chan Row) error {
 	return nil
 }
 
-// NewCSVSink returns a CSVSink which persists results to the given path.
-func NewCSVSink(path string) *CSVSink {
-	return &CSVSink{Path: path}
+// NewCSVSink returns a CSVSink which persists results to the given file.
+func NewCSVSink(writer io.Writer) (*CSVSink, error) {
+	return &CSVSink{w: csv.NewWriter(writer)}, nil
+}
+
+// NewCSVSinkFromPath returns a CSVSink which persists results to the given
+// path.
+func NewCSVSinkFromPath(path string) (*CSVSink, error) {
+	file, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	return NewCSVSink(file)
 }
