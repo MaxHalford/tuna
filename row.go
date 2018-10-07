@@ -11,11 +11,11 @@ func (r Row) Set(k string, v string) Row {
 	return r
 }
 
-// Suffix adds a suffix to each field of a Row and then returns the Row.
-func (r Row) Suffix(suffix string, sep string) Row {
+// Prefix adds a prefix to each field of a Row and then returns the Row.
+func (r Row) Prefix(prefix string, sep string) Row {
 	var nr = make(map[string]string)
 	for k, v := range r {
-		nr[fmt.Sprintf("%s%s%s", k, sep, suffix)] = v
+		nr[fmt.Sprintf("%s%s%s", prefix, sep, k)] = v
 	}
 	return nr
 }

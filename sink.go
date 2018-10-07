@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"io"
 	"os"
+	"sort"
 )
 
 // A Sink can persist the output of an Extractor's Collect method.
@@ -18,22 +19,32 @@ type CSVSink struct {
 	tmp  []string
 }
 
+func (cw CSVSink) writeRow(row Row) error {
+	for i, c := range cw.cols {
+		cw.tmp[i] = row[c]
+	}
+	return cw.w.Write(cw.tmp)
+}
+
 // Write to a CSV located at Path.
 func (cw *CSVSink) Write(rows <-chan Row) error {
 	defer func() { cw.w.Flush() }()
 	if cw.cols == nil {
 		// Extract and write the column names and the first row
 		cw.cols = make([]string, 0)
-		cw.tmp = make([]string, 0)
 		for r := range rows {
-			for k, v := range r {
+			// Extract the columns
+			for k := range r {
 				cw.cols = append(cw.cols, k)
-				cw.tmp = append(cw.tmp, v)
 			}
+			// Write the columns
+			sort.Strings(cw.cols)
 			if err := cw.w.Write(cw.cols); err != nil {
 				return err
 			}
-			if err := cw.w.Write(cw.tmp); err != nil {
+			// Write the first Row
+			cw.tmp = make([]string, len(cw.cols))
+			if err := cw.writeRow(r); err != nil {
 				return err
 			}
 			break
@@ -42,10 +53,7 @@ func (cw *CSVSink) Write(rows <-chan Row) error {
 
 	// Write each Row down
 	for r := range rows {
-		for i, c := range cw.cols {
-			cw.tmp[i] = r[c]
-		}
-		if err := cw.w.Write(cw.tmp); err != nil {
+		if err := cw.writeRow(r); err != nil {
 			return err
 		}
 	}

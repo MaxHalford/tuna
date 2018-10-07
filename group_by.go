@@ -1,9 +1,11 @@
 package tuna
 
+import "sort"
+
 // GroupBy maintains one Extractor instance per group.
 type GroupBy struct {
-	NewExtractor func() Extractor
 	By           string
+	NewExtractor func() Extractor
 	groups       map[string]Extractor
 }
 
@@ -18,10 +20,19 @@ func (gb *GroupBy) Update(row Row) error {
 
 // Collect streams the Collect of each group.
 func (gb GroupBy) Collect() <-chan Row {
+	// Sort the group keys so that the output is deterministic
+	keys := make([]string, len(gb.groups))
+	var i uint
+	for k := range gb.groups {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+
 	c := make(chan Row)
 	go func() {
-		for key, g := range gb.groups {
-			for r := range g.Collect() {
+		for _, key := range keys {
+			for r := range gb.groups[key].Collect() {
 				c <- r.Set(gb.By, key)
 			}
 		}
@@ -41,10 +52,10 @@ func (gb GroupBy) Size() uint {
 
 // NewGroupBy returns a GroupBy that maintains a Extractor for each
 // distinct value of a given variable.
-func NewGroupBy(newExtractor func() Extractor, by string) *GroupBy {
+func NewGroupBy(by string, newExtractor func() Extractor) *GroupBy {
 	return &GroupBy{
-		NewExtractor: newExtractor,
 		By:           by,
+		NewExtractor: newExtractor,
 		groups:       make(map[string]Extractor),
 	}
 }
@@ -53,8 +64,8 @@ func NewGroupBy(newExtractor func() Extractor, by string) *GroupBy {
 // encoutered the Trigger is called. This has many practical use case for large
 // but sequential data.
 type SequentialGroupBy struct {
-	NewExtractor func() Extractor
 	By           string
+	NewExtractor func() Extractor
 	Sink         Sink
 	key          string
 	extractor    Extractor
@@ -96,10 +107,10 @@ func (sgb SequentialGroupBy) Size() uint {
 
 // NewSequentialGroupBy returns a SequentialGroupBy that maintains an Extractor
 // for the given variable.
-func NewSequentialGroupBy(newExtractor func() Extractor, by string, sink Sink) *SequentialGroupBy {
+func NewSequentialGroupBy(by string, newExtractor func() Extractor, sink Sink) *SequentialGroupBy {
 	return &SequentialGroupBy{
-		NewExtractor: newExtractor,
 		By:           by,
+		NewExtractor: newExtractor,
 		Sink:         sink,
 	}
 }

@@ -34,7 +34,7 @@ func (d Diff) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
 		for r := range d.Extractor.Collect() {
-			c <- r.Suffix("diff", "_")
+			c <- r.Prefix("diff", "_")
 		}
 		close(c)
 	}()

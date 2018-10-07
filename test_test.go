@@ -1,6 +1,7 @@
 package tuna
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -37,5 +38,16 @@ func (tc ExtractorTestCase) Run(t *testing.T) {
 	output := b.String()
 	if output != tc.output {
 		t.Errorf("Expected:\n%s\nGot:\n%s", tc.output, output)
+	}
+}
+
+// ExtractorTestCases is a ExtractorTestCase slice, it's just here for
+// convenience.
+type ExtractorTestCases []ExtractorTestCase
+
+// Run the test cases.
+func (etcs ExtractorTestCases) Run(t *testing.T) {
+	for i, tc := range etcs {
+		t.Run(fmt.Sprintf("TC %d", i), func(t *testing.T) { tc.Run(t) })
 	}
 }
