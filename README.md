@@ -66,12 +66,17 @@ sz := tuna.StreamZip{[]tuna.Stream{
 }}
 ```
 
+### Writers
+
+#### `CSVWriter`
+
 ## Roadmap
 
 - Unit tests
 - [Running median](https://rhettinger.wordpress.com/tag/running-median/) (and quantiles!)
 - DSL
 - CLI tool based on the DSL
+- Handle dependencies between extractors (for example `Variance` could reuse `Mean`)
 - Cute logo
 
 ## License
