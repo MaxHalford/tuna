@@ -20,7 +20,7 @@ func (u *Union) Update(row Row) error {
 func (u Union) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		row := Row{}
+		row := make(Row)
 		for _, ex := range u.Extractors {
 			for r := range ex.Collect() {
 				for k, v := range r {
@@ -41,4 +41,13 @@ func (u Union) Size() uint {
 		s += ex.Size()
 	}
 	return s
+}
+
+// NewUnion returns a Union with the given Extractors.
+func NewUnion(exs ...Extractor) *Union {
+	var union = &Union{Extractors: make([]Extractor, len(exs))}
+	for i, ex := range exs {
+		union.Extractors[i] = ex
+	}
+	return union
 }

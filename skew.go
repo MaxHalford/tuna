@@ -1,17 +1,18 @@
 package tuna
 
 import (
+	"fmt"
 	"math"
-	"strconv"
 )
 
 // Skew computes a running skew using an extension of Welford's algorithm.
 type Skew struct {
-	Parse func(Row) (float64, error)
-	n     float64
-	mu    float64
-	m2    float64
-	m3    float64
+	Parse  func(Row) (float64, error)
+	Prefix string
+	n      float64
+	mu     float64
+	m2     float64
+	m3     float64
 }
 
 // Update Skew given a Row.
@@ -34,7 +35,7 @@ func (s *Skew) Update(row Row) error {
 func (s Skew) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{"skew": strconv.FormatFloat((math.Sqrt(s.n)*s.m3)/math.Pow(s.m2, 1.5), 'f', -1, 64)}
+		c <- Row{fmt.Sprintf("%s_skew", s.Prefix): float2Str((math.Sqrt(s.n) * s.m3) / math.Pow(s.m2, 1.5))}
 		close(c)
 	}()
 	return c
@@ -46,6 +47,7 @@ func (s Skew) Size() uint { return 1 }
 // NewSkew returns a Skew that computes the mean of a given field.
 func NewSkew(field string) *Skew {
 	return &Skew{
-		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
+		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
+		Prefix: field,
 	}
 }

@@ -1,13 +1,15 @@
 package tuna
 
 import (
+	"fmt"
 	"math"
 )
 
 // Min computes the minimal value of a column.
 type Min struct {
-	Parse func(Row) (float64, error)
-	min   float64
+	Parse  func(Row) (float64, error)
+	Prefix string
+	min    float64
 }
 
 // Update Min given a Row.
@@ -24,7 +26,7 @@ func (m *Min) Update(row Row) error {
 func (m Min) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{"min": float64ToString(m.min)}
+		c <- Row{fmt.Sprintf("%s_min", m.Prefix): float2Str(m.min)}
 		close(c)
 	}()
 	return c
@@ -36,7 +38,8 @@ func (m Min) Size() uint { return 1 }
 // NewMin returns a Min that computes the mean of a given field.
 func NewMin(field string) *Min {
 	return &Min{
-		Parse: func(row Row) (float64, error) { return stringToFloat64(row[field]) },
-		min:   math.Inf(1),
+		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
+		Prefix: field,
+		min:    math.Inf(1),
 	}
 }

@@ -24,7 +24,7 @@ func (d *Diff) Update(row Row) error {
 		d.seen = true
 		return nil
 	}
-	row[d.FieldName] = float64ToString(x - d.xi)
+	row[d.FieldName] = float2Str(x - d.xi)
 	d.xi = x
 	return d.Extractor.Update(row)
 }
@@ -34,7 +34,7 @@ func (d Diff) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
 		for r := range d.Extractor.Collect() {
-			c <- r.Prefix("diff", "_")
+			c <- r
 		}
 		close(c)
 	}()
@@ -49,7 +49,7 @@ func (d Diff) Size() uint { return d.Extractor.Size() }
 func NewDiff(field string, newExtractor func(s string) Extractor) *Diff {
 	fn := fmt.Sprintf("%s_diff", field)
 	return &Diff{
-		Parse:     func(row Row) (float64, error) { return stringToFloat64(row[field]) },
+		Parse:     func(row Row) (float64, error) { return str2Float(row[field]) },
 		FieldName: fn,
 		Extractor: newExtractor(fn),
 	}

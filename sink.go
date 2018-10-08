@@ -13,12 +13,14 @@ type Sink interface {
 }
 
 // CSVSink persist the output of an Extractor's Collect method to a CSV file.
+// The columns are ordered in lexical order.
 type CSVSink struct {
 	w    *csv.Writer
 	cols []string
 	tmp  []string
 }
 
+// writeRow writes a single Row.
 func (cw CSVSink) writeRow(row Row) error {
 	for i, c := range cw.cols {
 		cw.tmp[i] = row[c]
@@ -29,6 +31,7 @@ func (cw CSVSink) writeRow(row Row) error {
 // Write to a CSV located at Path.
 func (cw *CSVSink) Write(rows <-chan Row) error {
 	defer func() { cw.w.Flush() }()
+
 	if cw.cols == nil {
 		// Extract and write the column names and the first row
 		cw.cols = make([]string, 0)

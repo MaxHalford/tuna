@@ -37,7 +37,7 @@ func (tc ExtractorTestCase) Run(t *testing.T) {
 	// Check the output
 	output := b.String()
 	if output != tc.output {
-		t.Errorf("Expected:\n%s\nGot:\n%s", tc.output, output)
+		t.Errorf("got:\n%swant:\n%s", output, tc.output)
 	}
 }
 
@@ -48,6 +48,6 @@ type ExtractorTestCases []ExtractorTestCase
 // Run the test cases.
 func (etcs ExtractorTestCases) Run(t *testing.T) {
 	for i, tc := range etcs {
-		t.Run(fmt.Sprintf("TC %d", i), func(t *testing.T) { tc.Run(t) })
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) { tc.Run(t) })
 	}
 }

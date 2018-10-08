@@ -1,7 +1,6 @@
 package tuna
 
 import (
-	"bufio"
 	"encoding/csv"
 	"io"
 	"os"
@@ -10,9 +9,9 @@ import (
 // A Stream returns Rows one by one until it's source is depleted.
 type Stream chan ErrRow
 
-// StreamRows returns a Stream from a slice of Rows. It is mainly here for
+// NewStream returns a Stream from a slice of Rows. It is mainly here for
 // demonstration and testing purposes.
-func StreamRows(rows ...Row) Stream {
+func NewStream(rows ...Row) Stream {
 	s := make(Stream)
 	go func() {
 		for _, r := range rows {
@@ -23,22 +22,13 @@ func StreamRows(rows ...Row) Stream {
 	return s
 }
 
-// StreamCSV returns a Stream from a slice of Rows. It is mainly for
-// demonstration and testing purposes.
-func StreamCSV(path string) (Stream, error) {
-
-	// Open the file
-	file, err := os.Open(path)
-	if err != nil {
-		file.Close()
-		return nil, err
-	}
-
-	// Read the file
-	reader := csv.NewReader(bufio.NewReader(file))
+// NewCSVStream returns a Stream from an io.Reader that reads strings that are
+// assumed to CSV-parsable.
+func NewCSVStream(reader io.Reader) (Stream, error) {
+	csvr := csv.NewReader(reader)
 
 	// The first row is assumed to contain the column names
-	cols, err := reader.Read()
+	cols, err := csvr.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +37,7 @@ func StreamCSV(path string) (Stream, error) {
 
 	go func() {
 		for {
-			r, err := reader.Read()
+			r, err := csvr.Read()
 			if err != nil {
 				if err == io.EOF {
 					break
@@ -64,6 +54,16 @@ func StreamCSV(path string) (Stream, error) {
 	}()
 
 	return s, nil
+}
+
+// NewCSVStreamFromPath returns a Stream from a CSV file.
+func NewCSVStreamFromPath(path string) (Stream, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		file.Close()
+		return nil, err
+	}
+	return NewCSVStream(file)
 }
 
 // ZipStreams returns a Stream that iterates over multiple streams one by one.

@@ -18,7 +18,8 @@ func (gb *GroupBy) Update(row Row) error {
 	return gb.groups[key].Update(row)
 }
 
-// Collect streams the Collect of each group.
+// Collect streams the Collect of each group. The groups are output in the
+// lexical order of their keys.
 func (gb GroupBy) Collect() <-chan Row {
 	// Sort the group keys so that the output is deterministic
 	keys := make([]string, len(gb.groups))

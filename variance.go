@@ -1,13 +1,14 @@
 package tuna
 
-import "strconv"
+import "fmt"
 
 // Variance computes a running average using Welford's algorithm.
 type Variance struct {
-	Parse func(Row) (float64, error)
-	n     float64
-	mu    float64 // Running mean
-	ss    float64 // Running sum of squares
+	Parse  func(Row) (float64, error)
+	Prefix string
+	n      float64
+	mu     float64 // Running mean
+	ss     float64 // Running sum of squares
 }
 
 // Update Variance given a Row.
@@ -29,7 +30,7 @@ func (v *Variance) Update(row Row) error {
 func (v Variance) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{"variance": strconv.FormatFloat(v.ss/v.n, 'f', -1, 64)}
+		c <- Row{fmt.Sprintf("%s_variance", v.Prefix): float2Str(v.ss / v.n)}
 		close(c)
 	}()
 	return c
@@ -41,6 +42,7 @@ func (v Variance) Size() uint { return 1 }
 // NewVariance returns a Variance that computes the mean of a given field.
 func NewVariance(field string) *Variance {
 	return &Variance{
-		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
+		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
+		Prefix: field,
 	}
 }

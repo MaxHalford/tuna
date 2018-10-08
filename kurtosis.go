@@ -1,16 +1,19 @@
 package tuna
 
-import "strconv"
+import (
+	"fmt"
+)
 
 // Kurtosis computes a running kurtosis using an extension of Welford's
 // algorithm.
 type Kurtosis struct {
-	Parse func(Row) (float64, error)
-	n     float64
-	mu    float64
-	m2    float64
-	m3    float64
-	m4    float64
+	Parse  func(Row) (float64, error)
+	Prefix string
+	n      float64
+	mu     float64
+	m2     float64
+	m3     float64
+	m4     float64
 }
 
 // Update Kurtosis given a Row.
@@ -35,7 +38,7 @@ func (k *Kurtosis) Update(row Row) error {
 func (k Kurtosis) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{"kurtosis": strconv.FormatFloat((k.n*k.m4)/(k.m2*k.m2)-3, 'f', -1, 64)}
+		c <- Row{fmt.Sprintf("%s_kurtosis", k.Prefix): float2Str((k.n*k.m4)/(k.m2*k.m2) - 3)}
 		close(c)
 	}()
 	return c
@@ -47,6 +50,7 @@ func (k Kurtosis) Size() uint { return 1 }
 // NewKurtosis returns a Kurtosis that computes the mean of a given field.
 func NewKurtosis(field string) *Kurtosis {
 	return &Kurtosis{
-		Parse: func(row Row) (float64, error) { return strconv.ParseFloat(row[field], 64) },
+		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
+		Prefix: field,
 	}
 }

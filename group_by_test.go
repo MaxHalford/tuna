@@ -5,7 +5,7 @@ import "testing"
 func TestGroupBy(t *testing.T) {
 	ExtractorTestCases{
 		{
-			stream: StreamRows(
+			stream: NewStream(
 				Row{"key": "a", "flux": "1.0"},
 				Row{"key": "a", "flux": "2.0"},
 				Row{"key": "a", "flux": "3.0"},
@@ -14,10 +14,10 @@ func TestGroupBy(t *testing.T) {
 				Row{"key": "b", "flux": "-3.0"},
 			),
 			extractor: NewGroupBy("key", func() Extractor { return NewMean("flux") }),
-			output:    "key,mean\na,2\nb,-2\n",
+			output:    "flux_mean,key\n2,a\n-2,b\n",
 		},
 		{
-			stream: StreamRows(
+			stream: NewStream(
 				Row{"key": "b", "flux": "-1.0"},
 				Row{"key": "b", "flux": "-2.0"},
 				Row{"key": "b", "flux": "-3.0"},
@@ -26,10 +26,10 @@ func TestGroupBy(t *testing.T) {
 				Row{"key": "a", "flux": "3.0"},
 			),
 			extractor: NewGroupBy("key", func() Extractor { return NewMean("flux") }),
-			output:    "key,mean\na,2\nb,-2\n",
+			output:    "flux_mean,key\n2,a\n-2,b\n",
 		},
 		{
-			stream: StreamRows(
+			stream: NewStream(
 				Row{"key": "a", "flux": "1.0"},
 				Row{"key": "b", "flux": "-1.0"},
 				Row{"key": "a", "flux": "3.0"},
@@ -38,10 +38,10 @@ func TestGroupBy(t *testing.T) {
 				Row{"key": "a", "flux": "2.0"},
 			),
 			extractor: NewGroupBy("key", func() Extractor { return NewMean("flux") }),
-			output:    "key,mean\na,2\nb,-2\n",
+			output:    "flux_mean,key\n2,a\n-2,b\n",
 		},
 		{
-			stream: StreamRows(
+			stream: NewStream(
 				Row{"key": "a", "flux": "1.0"},
 				Row{"key": "a", "flux": "2.0"},
 				Row{"key": "a", "flux": "4.0"},
@@ -55,7 +55,7 @@ func TestGroupBy(t *testing.T) {
 					return NewDiff("flux", func(s string) Extractor { return NewMean(s) })
 				},
 			),
-			output: "diff_mean,key\n1.5,a\n0.5,b\n",
+			output: "flux_diff_mean,key\n1.5,a\n0.5,b\n",
 		},
 	}.Run(t)
 }
