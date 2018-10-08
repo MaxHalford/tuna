@@ -8,10 +8,6 @@
   <a href="https://godoc.org/github.com/MaxHalford/tuna">
     <img src="https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square" alt="godoc" />
   </a>
-  <!-- License -->
-  <a href="https://opensource.org/licenses/MIT">
-    <img src="http://img.shields.io/:license-mit-ff69b4.svg?style=flat-square" alt="license"/>
-  </a>
   <!-- Build status -->
   <a href="https://travis-ci.org/MaxHalford/tuna">
     <img src="https://img.shields.io/travis/MaxHalford/tuna/master.svg?style=flat-square" alt="build_status" />
@@ -19,6 +15,14 @@
   <!-- Test coverage -->
   <a href="https://coveralls.io/github/MaxHalford/tuna?branch=master">
     <img src="https://coveralls.io/repos/github/MaxHalford/tuna/badge.svg?branch=master&style=flat-square" alt="test_coverage" />
+  </a>
+  <!-- Go report card -->
+  <a href="https://goreportcard.com/report/github.com/MaxHalford/tuna">
+    <img src="https://goreportcard.com/badge/github.com/MaxHalford/tuna?style=flat-square" alt="go_report_card" />
+  </a>
+  <!-- License -->
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="http://img.shields.io/:license-mit-ff69b4.svg?style=flat-square" alt="license"/>
   </a>
 </div>
 
@@ -100,11 +104,11 @@ bangers_sum,name,£_mean
 
 #### Streaming from a CSV file
 
-#### Stream from multiple sources
+#### Streaming from multiple sources
 
 The `ZipStreams` method can be used to stream over multiple sources without having to concatenate them. Indeed in practice large datasets are more often than not split into chunks for practical reasons. The issue is that if you're using a `GroupBy` and that the group keys are scattered accross multiple sources, then processing each file individually won't produce the correct result.
 
-To use `ZipStreams` you simply have to provide one or more `Stream`s. It will then return a `Stream` which will iterate over each `Row` of each provided `Stream` until they are all depleted. Naturally you can combine different types of `Stream`s.
+To use `ZipStreams` you simply have to provide it with one or more `Stream`s. It will then return a `Stream` which will iterate over each `Row` of each provided `Stream` until they are all depleted. Naturally you can combine different types of `Stream`s.
 
 ```go
 s1, _ := tuna.NewCSVStream("path/to/file.csv")
@@ -124,6 +128,10 @@ s := tuna.ZipStreams(s1, s2)
 
 The `Mean` struct computes an approximate average. For every `value` the update formula is `mean = mean + (value - mean) / n`. For convenience you can instantiate a `Mean` with the `NewMean` method.
 
+### `Union`
+
+### `GroupBy`
+
 #### Writing a custom `Extractor`
 
 A feature extractor has to implement the following interface.
@@ -138,15 +146,11 @@ type Extractor interface {
 
 The `Update` method updates the running statistic that is being computed.
 
-The `Collect` methods returns a channel that streams `Row`s. Each such `Row` will then be stored in a CSV file (depending on your application). Most `Extractor`s only return a single result. For example `Mean` returns a `Row` with one key named `"mean"` and one value representing the current mean. On the other `GroupBy` returns multiple `Row`s (one per group).
+The `Collect` method returns a channel that streams `Row`s. Each such `Row` will be persisted with a `Sink`. Most `Extractor`s only return a single `Row`. For example `Mean` returns a `Row` with one key named `"mean_<field>"` and one value representing the estimated mean. `GroupBy`, however, returns multiple `Row`s (one per group).
 
-The `Size` method is simply here to monitor the number of computed values. Most `Extractor`s simply return 1 whereas `GroupBy` returns the sum of the sizes of each group.
+The `Size` method is simply here to monitor the number of computed values. Most `Extractor`s simply return `1` whereas `GroupBy` returns the sum of the sizes of each group.
 
 Naturally the easiest way to proceed is to copy/paste one of the existing `Extractor`s and then edit it.
-
-### `GroupBy`
-
-### `Union`
 
 ### Sinks
 

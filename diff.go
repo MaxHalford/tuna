@@ -3,7 +3,7 @@ package tuna
 import "fmt"
 
 // Diff runs a Extractor on the (x[i+1] - x[i]) version of a stream of
-// values. This can be used in conjuction with a GroupBy to compute rolling
+// values. This can be used in conjunction with a GroupBy to compute rolling
 // statistics.
 type Diff struct {
 	Parse     func(Row) (float64, error)

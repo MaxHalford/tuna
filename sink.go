@@ -65,8 +65,8 @@ func (cw *CSVSink) Write(rows <-chan Row) error {
 }
 
 // NewCSVSink returns a CSVSink which persists results to the given file.
-func NewCSVSink(writer io.Writer) (*CSVSink, error) {
-	return &CSVSink{w: csv.NewWriter(writer)}, nil
+func NewCSVSink(writer io.Writer) *CSVSink {
+	return &CSVSink{w: csv.NewWriter(writer)}
 }
 
 // NewCSVSinkFromPath returns a CSVSink which persists results to the given
@@ -76,5 +76,5 @@ func NewCSVSinkFromPath(path string) (*CSVSink, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewCSVSink(file)
+	return NewCSVSink(file), nil
 }

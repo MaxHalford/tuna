@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func Example1() {
+func ExampleRun() {
 	in := `name,£,bangers
 "Del Boy",-42,1
 Rodney,1001,1
@@ -28,7 +28,7 @@ Grandad,0,3`
 	)
 
 	// Define a Sink
-	sink, _ := NewCSVSink(os.Stdout)
+	sink := NewCSVSink(os.Stdout)
 
 	// Run
 	Run(stream, extractor, sink, 0)

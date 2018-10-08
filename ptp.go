@@ -15,10 +15,7 @@ func (ptp *PTP) Update(row Row) error {
 	if err := ptp.min.Update(row); err != nil {
 		return err
 	}
-	if err := ptp.max.Update(row); err != nil {
-		return err
-	}
-	return nil
+	return ptp.max.Update(row)
 }
 
 // Collect returns the current value.

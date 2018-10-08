@@ -44,11 +44,11 @@ func NewCSVStream(reader io.Reader) (Stream, error) {
 				}
 				s <- ErrRow{nil, err}
 			}
-			tmp := make(Row)
+			row := make(Row)
 			for i, name := range cols {
-				tmp[name] = r[i]
+				row[name] = r[i]
 			}
-			s <- ErrRow{tmp, nil}
+			s <- ErrRow{row, nil}
 		}
 		close(s)
 	}()

@@ -28,10 +28,7 @@ func (tc ExtractorTestCase) Run(t *testing.T) {
 
 	// Collect the output
 	b := &strings.Builder{}
-	sink, err := NewCSVSink(b)
-	if err != nil {
-		t.Error(err)
-	}
+	sink := NewCSVSink(b)
 	sink.Write(tc.extractor.Collect())
 
 	// Check the output
