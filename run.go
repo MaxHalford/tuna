@@ -17,6 +17,7 @@ func Run(stream Stream, extractor Extractor, sink Sink, checkpoint uint) error {
 		p  = message.NewPrinter(language.English)
 	)
 	for row := range stream {
+		n++
 		// Check there is no error
 		if row.err != nil {
 			return row.err
@@ -25,15 +26,8 @@ func Run(stream Stream, extractor Extractor, sink Sink, checkpoint uint) error {
 		if err := extractor.Update(row.Row); err != nil {
 			return err
 		}
-		n++
+		// Display the current progress if a checkpoint is reached
 		if checkpoint > 0 && n%checkpoint == 0 {
-			// Write the current results
-			if sink != nil {
-				if err := sink.Write(extractor.Collect()); err != nil {
-					return err
-				}
-			}
-			// Display the current progress
 			t := time.Since(t0)
 			p.Printf(
 				"\r%s -- %d rows -- %.0f rows/second -- %d values in memory",
