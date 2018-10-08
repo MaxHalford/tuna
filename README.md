@@ -96,26 +96,24 @@ bangers_sum,name,£_mean
 
 ### Streams
 
-#### `RowStream`
+#### Streaming `Rows` directly
 
-#### `CSVStream`
+#### Streaming from a CSV file
 
-#### `StreamZip`
+#### Stream from multiple sources
 
-The `StreamZip` struct can be used to stream over multiple files without having to concatenate them. Indeed in practice large datasets are more often than not split into chunks for practical reasons. The issue is that if you're using a `GroupBy` and that the group keys are scattered accross multiple files then processing each file individually won't produce the correct result.
+The `ZipStreams` method can be used to stream over multiple sources without having to concatenate them. Indeed in practice large datasets are more often than not split into chunks for practical reasons. The issue is that if you're using a `GroupBy` and that the group keys are scattered accross multiple sources, then processing each file individually won't produce the correct result.
 
-To use a `StreamZip` you simply have to instantiate it with one or more `Stream`s. Calling `Next` will iterate over each `Row` of each `Stream` and then stop once each `Stream` is depleted. Naturally you can combine different types of `Stream`s.
+To use `ZipStreams` you simply have to provide one or more `Stream`s. It will then return a `Stream` which will iterate over each `Row` of each provided `Stream` until they are all depleted. Naturally you can combine different types of `Stream`s.
 
 ```go
-cs, _ := tuna.StreamCSV("path/to/file.csv")
+s1, _ := tuna.NewCSVStream("path/to/file.csv")
+s2 := tuna.NewStream(
+    tuna.Row{"x0": "42.42", "x1": "24.24"},
+    tuna.Row{"x0": "13.37", "x1": "31.73"},
+)
 
-sz := tuna.StreamZip{
-    tuna.NewStream(
-        tuna.Row{"x0": "42.42", "x1": "24.24"},
-        tuna.Row{"x0": "13.37", "x1": "31.73"},
-    ),
-    cs
-}
+s := tuna.ZipStreams(s1, s2)
 ```
 
 #### Writing a custom `Stream`
