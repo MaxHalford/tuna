@@ -55,12 +55,13 @@ import (
 )
 
 func main() {
-    // For the purpose of this example we inline the data
+    // For the sake of example we inline the data, but usually it should be
+    // located in a file, database, or some other source
     in := `name,£,bangers
-"Del Boy",-42,1
+Del Boy,-42,1
 Rodney,1001,1
 Rodney,1002,2
-"Del Boy",42,0
+Del Boy,42,0
 Grandad,0,3`
 
     // Define a Stream
@@ -94,15 +95,43 @@ bangers_sum,name,£_mean
 3,Rodney,1001.5
 ```
 
+The `Run` method will also display live progress in the console.
+
+```sh
+00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory # This is just an example
+```
+
 ## API
 
 :point_up: Please check out the [godoc page](https://godoc.org/github.com/MaxHalford/tuna) in addition to the following documentation.
 
 ### Streams
 
+#### Streaming from a CSV file
+
+The most common use case you may probably have is to process rows located in a CSV file. You can use `NewCSVStream` to stream CSV data from an `io.Reader` instance.
+
+```go
+var r io.Reader // Depends on your application
+s := tuna.NewCSVStream(r)
+```
+
+Use `NewCSVStreamFromPath` to stream CSV data from file path, it is simply a wrapper on top of `NewCSVStream`.
+
+```go
+s := tuna.NewCSVStreamFromPath("path/to/file")
+```
+
 #### Streaming `Rows` directly
 
-#### Streaming from a CSV file
+For some reason you might want to stream from a given set of `Row`s. However this defeats the basic paradigm of `tuna` which is that the data can't be loaded in memory in it's entirety. Regardless streaming `Row`s directly is practical for testing purposes.
+
+```go
+s := tuna.NewStream(
+    tuna.Row{"x0": "42.42", "x1": "24.24"},
+    tuna.Row{"x0": "13.37", "x1": "31.73"},
+)
+```
 
 #### Streaming from multiple sources
 
@@ -111,12 +140,11 @@ The `ZipStreams` method can be used to stream over multiple sources without havi
 To use `ZipStreams` you simply have to provide it with one or more `Stream`s. It will then return a `Stream` which will iterate over each `Row` of each provided `Stream` until they are all depleted. Naturally you can combine different types of `Stream`s.
 
 ```go
-s1, _ := tuna.NewCSVStream("path/to/file.csv")
+s1, _ := tuna.NewCSVStreamFromPath("path/to/file.csv")
 s2 := tuna.NewStream(
     tuna.Row{"x0": "42.42", "x1": "24.24"},
     tuna.Row{"x0": "13.37", "x1": "31.73"},
 )
-
 s := tuna.ZipStreams(s1, s2)
 ```
 
@@ -126,11 +154,86 @@ s := tuna.ZipStreams(s1, s2)
 
 #### `Mean`
 
-The `Mean` struct computes an approximate average. For every `value` the update formula is `mean = mean + (value - mean) / n`. For convenience you can instantiate a `Mean` with the `NewMean` method.
+The `Mean` struct computes an approximate running mean. While the result is an approximation, it is good enough for most use cases. For every new `x` the update formula is `mean = mean + (x - mean) / n`. For convenience you can instantiate a `Mean` with the `NewMean` method.
 
-### `Union`
+#### `Union`
 
-### `GroupBy`
+Most most cases probably involve computing multiple statistics. One way would be to define a single `Extractor` which computes several statistics simultaneously. While this is computationally efficient and allows reusing computed values, it leads to writing application specific code that is somwhat difficult to maintain.
+
+Another way is to define a slice of `Extractors`s and loop over each one of them every time a new `Row` comes in. This is exactly what the `Union` struct does. You can use the [variadic](https://gobyexample.com/variadic-functions) `NewUnion` method to instantiate a `Union`.
+
+```go
+union := NewUnion(NewMean("flux"), NewSum("flux"))
+```
+
+You can think of this as [composition](https://www.wikiwand.com/en/Function_composition_(computer_science)).
+
+#### `GroupBy`
+
+Computing running statistics is nice but in practice you probably want to compute conditional statistics. In other words you want to "group by" the incoming values by a given variable and compute one or more statistics inside each group. This is what the `GroupBy` struct is intended for.
+
+You can use the `NewGroupBy` method to instantiate a `GroupBy`, it takes as arguments a `string` which tells it by what field to group the data and a `func() Extractor` callable which returns an `Extractor`. Every time a new key appears the callable will be used to instantiate a new `Extractor` for the new group.
+
+```go
+gb := NewGroupBy("name", func() Estimator { return NewSum("£") })
+```
+
+A nice thing is that you can use `Union`s together with `GroupBy`s. This will compute multiple statistics per group.
+
+```go
+gb := NewGroupBy(
+    "name",
+    func() Extractor {
+        return NewUnion(
+            NewMean("£"),
+            NewSum("bangers"),
+        )
+    },
+)
+```
+
+You can nest `GroupBy`s if you want to group the data by more than one variable. For example in the following case we're going to count the number of bikes taken along with the number of bikes returned by city and by day.
+
+```go
+gb := NewGroupBy(
+    "city",
+    func() Estimator {
+        return NewGroupBy(
+            "day",
+            func() Estimator {
+                return NewUnion(
+                    NewSum("bike_taken"),
+                    NewSum("bike_returned"),
+                )
+            }
+        )
+    }
+)
+```
+
+#### `SequentialGroupBy`
+
+The `GroupBy` can incur a large head if you are computing many statistics and that your data is very large. Indeed at most `n * k` values will have to maintained in memory, where `n` is the number of group keys and `k` is the number of `Extractor`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely fine if you have enough RAM available, it can slow down the computation.
+
+The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This means you only have to maintain `k` in memory. While having ordered data isn't always the case, it does happen. To make the most of this you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for `NewGroupBy`. Every time a new group key is encountered the current statistics are written to the `Sink` and a new `Extractor` is initialised to handle the new group.
+
+```go
+stream, _ := NewCSVStreamFromPath("path/to/csv/ordered/by/name")
+
+sink, _ := tuna.NewCSVSinkFromPath("path/to/sink")
+
+sgb := tuna.NewSequentialGroupBy(
+    "name",
+    func() Extractor { return NewMean("bangers") }
+    sink
+)
+
+tuna.Run(stream, sgb, nil, 1e6)
+```
+
+:point_up: If you're using a `SequentialGroupBy` then you don't have to give to provide a `Sink` to the `Run` method. This is because the results will be written every time a new group key is encountered.
+
+:point_up: Make sure your data is ordered by the group key before using `SequentialGroupBy`. There are various ways to sort a file by a field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
 
 #### Writing a custom `Extractor`
 
@@ -162,12 +265,11 @@ Naturally the easiest way to proceed is to copy/paste one of the existing `Extra
 
 ## Roadmap
 
-- Unit tests
 - [Running median](https://rhettinger.wordpress.com/tag/running-median/) (and quantiles!)
 - DSL
 - CLI tool based on the DSL
-- Handle dependencies between extractors (for example `Variance` could reuse `Mean`)
-- Identify bottlenecks
+- Maybe handle dependencies between extractors (for example `Variance` could reuse `Mean`)
+- Benchmark and identify bottlenecks
 
 ## License
 

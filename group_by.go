@@ -75,7 +75,7 @@ type SequentialGroupBy struct {
 // Update updates the Extractor of the Row's group.
 func (sgb *SequentialGroupBy) Update(row Row) error {
 	key := row[sgb.By]
-	// Call the Trigger if key has changed
+	// Call the Trigger if the key has changed
 	if sgb.key != key && sgb.extractor != nil {
 		if err := sgb.Sink.Write(sgb.Collect()); err != nil {
 			return err

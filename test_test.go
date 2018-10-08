@@ -17,14 +17,7 @@ type ExtractorTestCase struct {
 // results of the Collect method.
 func (tc ExtractorTestCase) Run(t *testing.T) {
 	// Go through the Rows and update the Extractor
-	for row := range tc.stream {
-		if row.err != nil {
-			t.Error(row.err)
-		}
-		if err := tc.extractor.Update(row.Row); err != nil {
-			t.Error(err)
-		}
-	}
+	Run(tc.stream, tc.extractor, nil, 0)
 
 	// Collect the output
 	b := &strings.Builder{}
@@ -45,6 +38,6 @@ type ExtractorTestCases []ExtractorTestCase
 // Run the test cases.
 func (etcs ExtractorTestCases) Run(t *testing.T) {
 	for i, tc := range etcs {
-		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) { tc.Run(t) })
+		t.Run(fmt.Sprintf("Test case %d", i), func(t *testing.T) { tc.Run(t) })
 	}
 }

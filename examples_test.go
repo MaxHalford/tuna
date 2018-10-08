@@ -6,11 +6,13 @@ import (
 )
 
 func ExampleRun() {
+	// For the sake of example we inline the data, but usually it should be
+	// located in a file, database, or some other source
 	in := `name,£,bangers
-"Del Boy",-42,1
+Del Boy,-42,1
 Rodney,1001,1
 Rodney,1002,2
-"Del Boy",42,0
+Del Boy,42,0
 Grandad,0,3`
 
 	// Define a Stream

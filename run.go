@@ -36,7 +36,7 @@ func Run(stream Stream, extractor Extractor, sink Sink, checkpoint uint) error {
 			// Display the current progress
 			t := time.Since(t0)
 			p.Printf(
-				"\r%s -- %d rows -- %.0f rows/second -- %d values",
+				"\r%s -- %d rows -- %.0f rows/second -- %d values in memory",
 				fmtDuration(t),
 				n,
 				float64(n)/t.Seconds(),
@@ -44,8 +44,17 @@ func Run(stream Stream, extractor Extractor, sink Sink, checkpoint uint) error {
 			)
 		}
 	}
+	// If there was no checkpoint and that there is a sink then the data has to
+	// be written
 	if checkpoint == 0 && sink != nil {
 		if err := sink.Write(extractor.Collect()); err != nil {
+			return err
+		}
+	}
+	// If the extractor is a SequentialGroupBy then the last group hasn't been
+	// written down yet
+	if sgb, ok := extractor.(*SequentialGroupBy); ok {
+		if err := sgb.Sink.Write(sgb.Collect()); err != nil {
 			return err
 		}
 	}
