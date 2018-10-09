@@ -189,6 +189,14 @@ The `Parse` method determines how to parse an incoming `Row`. This allows doing 
 
 :warning: It isn't recommended to instantiate an `Extractor` yourself. Calling the `New` methods will set initial values which are required for obtaining correct results. If you want to modify the `Parse` or the `Prefix` fields then you can set them after calling the `New` method.
 
+#### `NUnique`
+
+The `NUnique` struct works slightly differently. It's `Parser` field is not a `func(Row) (float64, error)` but a `func(Row) (string, error)`.
+
+#### `Count`
+
+The `Count` struct doesn't have to parse a field, it simply counts the number of `Row`s it sees. If you use outside a `GroupBy` it will count the number of total `Row`s.
+
 #### `Diff`
 
 A common use case that occurs for ordered data is to compute statistics on the differences of consecutive values. For example you might want to compute the average change of a metric. This requires memorising the previous value and feeding the difference with the current value to an `Extractor`. You can do this by using the `Diff` struct which has the following signature:
