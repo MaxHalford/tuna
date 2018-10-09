@@ -8,8 +8,7 @@ type Union struct {
 // Update each Extractor given a Row.
 func (u *Union) Update(row Row) error {
 	for i := range u.Extractors {
-		err := u.Extractors[i].Update(row)
-		if err != nil {
+		if err := u.Extractors[i].Update(row); err != nil {
 			return err
 		}
 	}

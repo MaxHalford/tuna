@@ -116,14 +116,7 @@ func TestGroupBy(t *testing.T) {
 			),
 			extractor: NewGroupBy(
 				"key",
-				func() Extractor {
-					return NewDiff(
-						"fluxx",
-						func(s string) Extractor {
-							return NewUnion(NewMean(s), NewSum(s))
-						},
-					)
-				},
+				func() Extractor { return NewUnion(NewMean("flux"), NewSum("fluxx")) },
 			),
 			isErr: true,
 		},
