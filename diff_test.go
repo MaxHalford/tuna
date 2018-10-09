@@ -14,5 +14,14 @@ func TestDiff(t *testing.T) {
 			output:    "flux_diff_mean\n1.5\n",
 			size:      1,
 		},
+		{
+			stream: NewStream(
+				Row{"flux": "3.0"},
+				Row{"flux": "4.0"},
+				Row{"flux": "2.0"},
+			),
+			extractor: NewDiff("fluxx", func(s string) Extractor { return NewMean(s) }),
+			isErr:     true,
+		},
 	}.Run(t)
 }

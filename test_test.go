@@ -10,6 +10,7 @@ import (
 type ExtractorTestCase struct {
 	stream    Stream
 	extractor Extractor
+	isErr     bool
 	output    string
 	size      uint
 }
@@ -18,7 +19,21 @@ type ExtractorTestCase struct {
 // results of the Collect method.
 func (tc ExtractorTestCase) Run(t *testing.T) {
 	// Go through the Rows and update the Extractor
-	Run(tc.stream, tc.extractor, nil, 0)
+	err := Run(tc.stream, tc.extractor, nil, 0)
+
+	// Check the error
+	if err == nil {
+		if tc.isErr == true {
+			t.Error("expected an error, got nil")
+			return
+		}
+	} else {
+		if tc.isErr == false {
+			t.Errorf("expected no error, got %v", err)
+			return
+		}
+		return
+	}
 
 	// Collect and check the output
 	b := &strings.Builder{}

@@ -7,8 +7,8 @@ import "fmt"
 // statistics.
 type Diff struct {
 	Parse     func(Row) (float64, error)
-	FieldName string
 	Extractor Extractor
+	FieldName string
 	seen      bool
 	xi        float64
 }
@@ -50,7 +50,7 @@ func NewDiff(field string, newExtractor func(s string) Extractor) *Diff {
 	fn := fmt.Sprintf("%s_diff", field)
 	return &Diff{
 		Parse:     func(row Row) (float64, error) { return str2Float(row[field]) },
-		FieldName: fn,
 		Extractor: newExtractor(fn),
+		FieldName: fn,
 	}
 }

@@ -107,13 +107,13 @@ The most common use case you may probably have is to process rows located in a C
 
 ```go
 var r io.Reader // Depends on your application
-s := tuna.NewCSVStream(r)
+stream := tuna.NewCSVStream(r)
 ```
 
-Use `NewCSVStreamFromPath` to stream CSV data from a file path, it is simply a wrapper on top of `NewCSVStream`.
+For convenicence you can use the `NewCSVStreamFromPath` method to stream CSV data from a file path, it is simply a wrapper on top of `NewCSVStream`.
 
 ```go
-s := tuna.NewCSVStreamFromPath("path/to/file")
+stream := tuna.NewCSVStreamFromPath("path/to/file")
 ```
 
 #### Streaming `Rows` directly
@@ -121,7 +121,7 @@ s := tuna.NewCSVStreamFromPath("path/to/file")
 For some reason you might want to stream from a given set of `Row`s. However this defeats the basic paradigm of `tuna` which is that the data can't be loaded in memory in it's entirety. Regardless streaming `Row`s directly is practical for testing purposes.
 
 ```go
-s := tuna.NewStream(
+stream := tuna.NewStream(
     tuna.Row{"x0": "42.42", "x1": "24.24"},
     tuna.Row{"x0": "13.37", "x1": "31.73"},
 )
@@ -139,20 +139,77 @@ s2 := tuna.NewStream(
     tuna.Row{"x0": "42.42", "x1": "24.24"},
     tuna.Row{"x0": "13.37", "x1": "31.73"},
 )
-s := tuna.ZipStreams(s1, s2)
+stream := tuna.ZipStreams(s1, s2)
 ```
 
-#### Writing a custom `Stream`
+#### Using a custom `Stream`
+
+A `Stream` is simply a channel that returns `ErrRow`s, i.e.
+
+```go
+type Stream chan ErrRow
+```
+
+An `ErrRow` has the following signature.
+
+```go
+type ErrRow struct {
+    Row
+    Err error
+}
+```
+
+A `Row` is nothing more than a `map[string]string`. The `Err` fields indicates if something went wrong during the retrieval of the corresponding `Row`.
 
 ### Extractors
 
-#### `Mean`
+#### Basic aggregators
 
-The `Mean` struct computes an approximate running mean. While the result is an approximation, it is good enough for most use cases. For every new `x` the update formula is `mean = mean + (x - mean) / n`. For convenience you can instantiate a `Mean` with the `NewMean` method.
+All of the following `Extractor`s work in the same way:
+
+- `Mean`
+- `Variance`
+- `Sum`
+- `Min`
+- `Max`
+- `PTP` which stands for "peak to peak" and computes `max(x) - min(x)`
+- `Skew`
+- `Kurtosis`
+
+For convenience you can instantiate each struct with it's respective `New` method. For example use the `NewMean` method if you want to use the `Mean` struct. Each of these methods takes as argument a `string` which indicates the field for which the aggregate should be computed.
+
+You can have finer control by modifying each struct after calling it's `New` method. Each of the above structs has a `Parse` method and a `Prefix` string. For example the signature of the `Max` struct is:
+
+```go
+type Max struct {
+    Parse  func(Row) (float64, error)
+    Prefix string
+}
+```
+
+The `Parse` method determines how to parse an incoming `Row`. This allows doing fancy things, for example parsing a field as a `float64` and then applying a logarithmic transform. The `Prefix` string determines what prefix should be used when the results are collected. For example setting a `candy_` prefix with the `Max` struct will use `candy_max` as a result name.
+
+:warning: It isn't recommended to instantiate an `Extractor` yourself. Calling the `New` methods sets initial values which are required for obtaining correct results. If you want to modify the `Parse` or the `Prefix` fields then set them after calling the `New` method.
+
+#### `Diff`
+
+A common use case that occurs for ordered data is to compute statistics of the differences between consecutive values. This requires memorising the previous value and feeding the difference with the current value to an `Extractor`. You can do this by using the `Diff` struct which has the following signature:
+
+```go
+type Diff struct {
+    Parse     func(Row) (float64, error)
+    Extractor Extractor
+    FieldName string
+}
+```
+
+The `Parse` method tells the `Diff` how to parse an incoming `Row`. The current value will be stored and update each time a new `Row` comes in. When this happens a new field will be set on the `Row`, which will be then be processed through the `Extractor`.  The `FieldName` string determines the name of this new field. It's important **that the `Extractor` parsed the field named `FieldName`**. For convenience you can use the `NewDiff` method if you don't have to do any fancy processing.
+
+:point_up: Make sure your data is ordered in the right way before using `Diff`. There are various ways to sort a file by a given field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
 
 #### `Union`
 
-Most most cases probably involve computing multiple statistics. One way would be to define a single `Extractor` which computes several statistics simultaneously. While this is computationally efficient and allows reusing computed values, it leads to writing application specific code that is somwhat difficult to maintain.
+Most use cases usually involve computing multiple statistics. One way would be to define a single `Extractor` which computes several statistics simultaneously. While this is computationally efficient and allows reusing computed values, it leads to writing application specific code that is somwhat difficult to maintain.
 
 Another way is to define a slice of `Extractors`s and loop over each one of them every time a new `Row` comes in. This is exactly what the `Union` struct does. You can use the [variadic](https://gobyexample.com/variadic-functions) `NewUnion` method to instantiate a `Union`.
 
@@ -207,9 +264,9 @@ gb := NewGroupBy(
 
 #### `SequentialGroupBy`
 
-Using a `GroupBy` can incur a large memory usage if you are computing many statistics on a very large dataset. Indeed at most `n * k` values will have to maintained in memory, where `n` is the number of group keys and `k` is the number of `Extractor`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely fine if you have enough RAM available, it can slow down the computation.
+Using a `GroupBy` can incur a large memory usage if you are computing many statistics on a very large dataset. Indeed the spatial complexity is `O(n * k)`, where `n` is the number of group keys and `k` is the number of `Extractor`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely fine if you have enough RAM available, it can hinder the overall computation time.
 
-The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This means you only have to maintain `k` in memory. While having ordered data isn't always the case, it does happen. To make the most of this you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for `NewGroupBy`. Every time a new group key is encountered the current statistics are written to the `Sink` and a new `Extractor` is initialised to handle the new group.
+The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This leads to a `O(k)` spatial complexity which is much more efficient. While having ordered data isn't always the case, you should make the most of it is the case. To do so you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for the `NewGroupBy` method. Every time a new group key is encountered the current statistics are written to the `Sink` and a new `Extractor` is initialised to handle the new group.
 
 ```go
 stream, _ := NewCSVStreamFromPath("path/to/csv/ordered/by/name")
@@ -227,7 +284,7 @@ tuna.Run(stream, sgb, nil, 1e6)
 
 :point_up: If you're using a `SequentialGroupBy` then you don't have to provide a `Sink` to the `Run` method. This is because the results will be written every time a new group key is encountered.
 
-:point_up: Make sure your data is ordered by the group key before using `SequentialGroupBy`. There are various ways to sort a file by a field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
+:point_up: Make sure your data is ordered by the group key before using `SequentialGroupBy`. There are various ways to sort a file by a given field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
 
 #### Writing a custom `Extractor`
 
@@ -253,11 +310,41 @@ Naturally the easiest way to proceed is to copy/paste one of the existing `Extra
 
 #### `CSVSink`
 
+You can use a `CSVSink` struct to write the results of an `Extractor` to a CSV file. It will write one row per `Row` returned by the `Extractor`'s `Collect` method. Use the `NewCSVSink` method to instantiate a `CSVSink` that writes to a given `io.Writer`.
+
+```go
+var w io.Reader // Depends on your application
+sink := tuna.NewCSVSink(r)
+```
+
+For convenicence you can use the `NewCSVStreamFromPath` method to stream CSV data from a file path, it is simply a wrapper on top of `NewCSVStream`.
+
+```go
+sink := tuna.NewCSVSinkFromPath("path/to/file")
+```
+
 #### Writing a custom `Sink`
+
+The `Sink` interface has the following signature:
+
+```go
+type Sink interface {
+    Write(rows <-chan Row) error
+}
+```
+
+A `Sink` simply has to be able to write a channel of `Row`s "somewhere".
 
 ### The `Run` method
 
-The `Run` method will also display live progress in the console, for example:
+Using the `Run` method is quite straightforward.
+
+```go
+checkpoint := 1e5
+err := Run(stream, extractor, sink, checkpoint)
+```
+
+You simply have to provide it with a `Stream`, an `Extractor`, and a `Sink`. It will update the `Extractor` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Extractor` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console everytime the number of parsed rows is a multiple of `checkpoint`, e.g.:
 
 ```sh
 00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory

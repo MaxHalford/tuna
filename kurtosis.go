@@ -38,7 +38,7 @@ func (k *Kurtosis) Update(row Row) error {
 func (k Kurtosis) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_kurtosis", k.Prefix): float2Str((k.n*k.m4)/(k.m2*k.m2) - 3)}
+		c <- Row{fmt.Sprintf("%skurtosis", k.Prefix): float2Str((k.n*k.m4)/(k.m2*k.m2) - 3)}
 		close(c)
 	}()
 	return c
@@ -51,6 +51,6 @@ func (k Kurtosis) Size() uint { return 1 }
 func NewKurtosis(field string) *Kurtosis {
 	return &Kurtosis{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 	}
 }

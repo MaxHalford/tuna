@@ -26,7 +26,7 @@ func (m *Max) Update(row Row) error {
 func (m Max) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_max", m.Prefix): float2Str(m.max)}
+		c <- Row{fmt.Sprintf("%smax", m.Prefix): float2Str(m.max)}
 		close(c)
 	}()
 	return c
@@ -39,7 +39,7 @@ func (m Max) Size() uint { return 1 }
 func NewMax(field string) *Max {
 	return &Max{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 		max:    math.Inf(-1),
 	}
 }

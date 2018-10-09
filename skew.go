@@ -35,7 +35,7 @@ func (s *Skew) Update(row Row) error {
 func (s Skew) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_skew", s.Prefix): float2Str((math.Sqrt(s.n) * s.m3) / math.Pow(s.m2, 1.5))}
+		c <- Row{fmt.Sprintf("%sskew", s.Prefix): float2Str((math.Sqrt(s.n) * s.m3) / math.Pow(s.m2, 1.5))}
 		close(c)
 	}()
 	return c
@@ -48,6 +48,6 @@ func (s Skew) Size() uint { return 1 }
 func NewSkew(field string) *Skew {
 	return &Skew{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 	}
 }

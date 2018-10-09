@@ -23,7 +23,7 @@ func (s *Sum) Update(row Row) error {
 func (s Sum) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_sum", s.Prefix): float2Str(s.sum)}
+		c <- Row{fmt.Sprintf("%ssum", s.Prefix): float2Str(s.sum)}
 		close(c)
 	}()
 	return c
@@ -36,6 +36,6 @@ func (s Sum) Size() uint { return 1 }
 func NewSum(field string) *Sum {
 	return &Sum{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 	}
 }

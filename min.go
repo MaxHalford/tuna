@@ -26,7 +26,7 @@ func (m *Min) Update(row Row) error {
 func (m Min) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_min", m.Prefix): float2Str(m.min)}
+		c <- Row{fmt.Sprintf("%smin", m.Prefix): float2Str(m.min)}
 		close(c)
 	}()
 	return c
@@ -39,7 +39,7 @@ func (m Min) Size() uint { return 1 }
 func NewMin(field string) *Min {
 	return &Min{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 		min:    math.Inf(1),
 	}
 }

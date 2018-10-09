@@ -12,5 +12,5 @@ func (r Row) Set(k string, v string) Row {
 // An ErrRow is a Row that has an accompanying error.
 type ErrRow struct {
 	Row
-	err error
+	Err error
 }

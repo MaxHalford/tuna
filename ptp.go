@@ -22,7 +22,7 @@ func (ptp *PTP) Update(row Row) error {
 func (ptp PTP) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_ptp", ptp.Prefix): float2Str(ptp.max.max - ptp.min.min)}
+		c <- Row{fmt.Sprintf("%sptp", ptp.Prefix): float2Str(ptp.max.max - ptp.min.min)}
 		close(c)
 	}()
 	return c
@@ -35,7 +35,7 @@ func (ptp PTP) Size() uint { return 1 }
 func NewPTP(field string) *PTP {
 	return &PTP{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 		min:    NewMin(field),
 		max:    NewMax(field),
 	}

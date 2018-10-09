@@ -1,6 +1,8 @@
 package tuna
 
-import "sort"
+import (
+	"sort"
+)
 
 // GroupBy maintains one Extractor instance per group.
 type GroupBy struct {
@@ -11,8 +13,11 @@ type GroupBy struct {
 
 // Update updates the Extractor of the Row's group.
 func (gb *GroupBy) Update(row Row) error {
-	key := row[gb.By]
-	if _, ok := gb.groups[key]; !ok {
+	key, ok := row[gb.By]
+	if !ok {
+		return ErrUnknownField{gb.By}
+	}
+	if _, ok = gb.groups[key]; !ok {
 		gb.groups[key] = gb.NewExtractor()
 	}
 	return gb.groups[key].Update(row)
@@ -87,12 +92,16 @@ func (sgb *SequentialGroupBy) Flush() error {
 
 // Update updates the Extractor of the Row's group.
 func (sgb *SequentialGroupBy) Update(row Row) error {
-	if sgb.key != row[sgb.By] {
+	key, ok := row[sgb.By]
+	if !ok {
+		return ErrUnknownField{sgb.By}
+	}
+	if sgb.key != key {
 		if err := sgb.Flush(); err != nil {
 			return err
 		}
 	}
-	sgb.key = row[sgb.By]
+	sgb.key = key
 	return sgb.extractor.Update(row)
 }
 

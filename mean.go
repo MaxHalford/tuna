@@ -26,7 +26,7 @@ func (m *Mean) Update(row Row) error {
 func (m Mean) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_mean", m.Prefix): float2Str(m.mean)}
+		c <- Row{fmt.Sprintf("%smean", m.Prefix): float2Str(m.mean)}
 		close(c)
 	}()
 	return c
@@ -39,6 +39,6 @@ func (m Mean) Size() uint { return 1 }
 func NewMean(field string) *Mean {
 	return &Mean{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 	}
 }

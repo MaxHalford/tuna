@@ -30,7 +30,7 @@ func (v *Variance) Update(row Row) error {
 func (v Variance) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
-		c <- Row{fmt.Sprintf("%s_variance", v.Prefix): float2Str(v.ss / v.n)}
+		c <- Row{fmt.Sprintf("%svariance", v.Prefix): float2Str(v.ss / v.n)}
 		close(c)
 	}()
 	return c
@@ -43,6 +43,6 @@ func (v Variance) Size() uint { return 1 }
 func NewVariance(field string) *Variance {
 	return &Variance{
 		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: field,
+		Prefix: fmt.Sprintf("%s_", field),
 	}
 }

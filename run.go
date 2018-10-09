@@ -19,8 +19,8 @@ func Run(stream Stream, extractor Extractor, sink Sink, checkpoint uint) error {
 	for row := range stream {
 		n++
 		// Check there is no error
-		if row.err != nil {
-			return row.err
+		if row.Err != nil {
+			return row.Err
 		}
 		// Update the Extractor
 		if err := extractor.Update(row.Row); err != nil {
