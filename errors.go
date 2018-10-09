@@ -9,5 +9,5 @@ type ErrUnknownField struct {
 
 // Error implements the Error interface.
 func (e ErrUnknownField) Error() string {
-	return fmt.Sprintf("no field named %s", e.field)
+	return fmt.Sprintf("no field named '%s'", e.field)
 }

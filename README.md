@@ -306,6 +306,8 @@ The `Size` method is simply here to monitor the number of computed values. Most 
 
 Naturally the easiest way to proceed is to copy/paste one of the existing `Extractor`s and then edit it.
 
+:point_up: You can return a `ErrUnknownField` in case your `Extractor`'s tries to access a non-existing `Row` field in it's `Update` method.
+
 ### Sinks
 
 #### `CSVSink`
@@ -349,6 +351,8 @@ You simply have to provide it with a `Stream`, an `Extractor`, and a `Sink`. It 
 ```sh
 00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory
 ```
+
+:point_up: In the future there might be a `Runner` interface to allow more flexibility. In the meantime you copy/paste the content of the `Run` method and modify it as needed if you want to do something fancy (like monitoring progress inside a web page or whatnot)
 
 ## Roadmap
 
