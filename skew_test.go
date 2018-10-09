@@ -14,6 +14,7 @@ func TestSkew(t *testing.T) {
 			),
 			extractor: NewSkew("flux"),
 			output:    "flux_skew\n0\n",
+			size:      1,
 		},
 	}.Run(t)
 }

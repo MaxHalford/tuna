@@ -12,6 +12,7 @@ func TestVariance(t *testing.T) {
 			),
 			extractor: NewVariance("flux"),
 			output:    "flux_variance\n6\n",
+			size:      1,
 		},
 	}.Run(t)
 }

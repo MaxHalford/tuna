@@ -12,6 +12,7 @@ func TestPTP(t *testing.T) {
 			),
 			extractor: NewPTP("flux"),
 			output:    "flux_ptp\n5.2\n",
+			size:      1,
 		},
 	}.Run(t)
 }

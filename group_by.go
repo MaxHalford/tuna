@@ -72,20 +72,27 @@ type SequentialGroupBy struct {
 	extractor    Extractor
 }
 
-// Update updates the Extractor of the Row's group.
-func (sgb *SequentialGroupBy) Update(row Row) error {
-	key := row[sgb.By]
-	// Call the Trigger if the key has changed
-	if sgb.key != key && sgb.extractor != nil {
+// Flush writes the results of the Extractor and resets it.
+func (sgb *SequentialGroupBy) Flush() error {
+	if sgb.extractor != nil {
 		if err := sgb.Sink.Write(sgb.Collect()); err != nil {
 			return err
 		}
 		sgb.extractor = sgb.NewExtractor()
-	}
-	if sgb.extractor == nil {
+	} else {
 		sgb.extractor = sgb.NewExtractor()
 	}
-	sgb.key = key
+	return nil
+}
+
+// Update updates the Extractor of the Row's group.
+func (sgb *SequentialGroupBy) Update(row Row) error {
+	if sgb.key != row[sgb.By] {
+		if err := sgb.Flush(); err != nil {
+			return err
+		}
+	}
+	sgb.key = row[sgb.By]
 	return sgb.extractor.Update(row)
 }
 

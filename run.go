@@ -48,7 +48,7 @@ func Run(stream Stream, extractor Extractor, sink Sink, checkpoint uint) error {
 	// If the extractor is a SequentialGroupBy then the last group hasn't been
 	// written down yet
 	if sgb, ok := extractor.(*SequentialGroupBy); ok {
-		if err := sgb.Sink.Write(sgb.Collect()); err != nil {
+		if err := sgb.Flush(); err != nil {
 			return err
 		}
 	}

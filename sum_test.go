@@ -19,6 +19,7 @@ func TestSum(t *testing.T) {
 			),
 			extractor: NewSum("flux"),
 			output:    "flux_sum\n9\n",
+			size:      1,
 		},
 	}.Run(t)
 }

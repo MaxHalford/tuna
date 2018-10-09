@@ -19,6 +19,7 @@ func TestGroupBy(t *testing.T) {
 			),
 			extractor: NewGroupBy("key", func() Extractor { return NewMean("flux") }),
 			output:    "flux_mean,key\n2,a\n-2,b\n",
+			size:      2,
 		},
 		{
 			stream: NewStream(
@@ -31,6 +32,7 @@ func TestGroupBy(t *testing.T) {
 			),
 			extractor: NewGroupBy("key", func() Extractor { return NewMean("flux") }),
 			output:    "flux_mean,key\n2,a\n-2,b\n",
+			size:      2,
 		},
 		{
 			stream: NewStream(
@@ -43,6 +45,7 @@ func TestGroupBy(t *testing.T) {
 			),
 			extractor: NewGroupBy("key", func() Extractor { return NewMean("flux") }),
 			output:    "flux_mean,key\n2,a\n-2,b\n",
+			size:      2,
 		},
 		{
 			stream: NewStream(
@@ -60,6 +63,30 @@ func TestGroupBy(t *testing.T) {
 				},
 			),
 			output: "flux_diff_mean,key\n1.5,a\n0.5,b\n",
+			size:   2,
+		},
+		{
+			stream: NewStream(
+				Row{"key": "a", "flux": "1.0"},
+				Row{"key": "a", "flux": "2.0"},
+				Row{"key": "a", "flux": "4.0"},
+				Row{"key": "b", "flux": "-1.0"},
+				Row{"key": "b", "flux": "-2.0"},
+				Row{"key": "b", "flux": "0.0"},
+			),
+			extractor: NewGroupBy(
+				"key",
+				func() Extractor {
+					return NewDiff(
+						"flux",
+						func(s string) Extractor {
+							return NewUnion(NewMean(s), NewSum(s))
+						},
+					)
+				},
+			),
+			output: "flux_diff_mean,flux_diff_sum,key\n1.5,3,a\n0.5,1,b\n",
+			size:   4,
 		},
 	}.Run(t)
 }
@@ -73,6 +100,7 @@ func TestSequentialGroupBy(t *testing.T) {
 		key          string
 		newExtractor func() Extractor
 		output       string
+		size         uint
 	}{
 		{
 			stream: NewStream(
@@ -86,6 +114,7 @@ func TestSequentialGroupBy(t *testing.T) {
 			key:          "key",
 			newExtractor: func() Extractor { return NewMean("flux") },
 			output:       "flux_mean,key\n2,a\n-2,b\n",
+			size:         1,
 		},
 		{
 			stream: NewStream(
@@ -99,6 +128,7 @@ func TestSequentialGroupBy(t *testing.T) {
 			key:          "key",
 			newExtractor: func() Extractor { return NewMean("flux") },
 			output:       "flux_mean,key\n-2,b\n2,a\n",
+			size:         1,
 		},
 	}
 	for i, tc := range testCases {
@@ -108,12 +138,16 @@ func TestSequentialGroupBy(t *testing.T) {
 			sgb := NewSequentialGroupBy(tc.key, tc.newExtractor, NewCSVSink(b))
 			Run(tc.stream, sgb, nil, 0)
 
-			// Collect the output
+			// Collect and check the output
 			output := b.String()
-
-			// Check the output
 			if output != tc.output {
 				t.Errorf("got:\n%swant:\n%s", output, tc.output)
+			}
+
+			// Check the size
+			size := sgb.Size()
+			if size != tc.size {
+				t.Errorf("got: %d, want: %d\n", size, tc.size)
 			}
 		})
 	}

@@ -12,6 +12,7 @@ func TestDiff(t *testing.T) {
 			),
 			extractor: NewDiff("flux", func(s string) Extractor { return NewMean(s) }),
 			output:    "flux_diff_mean\n1.5\n",
+			size:      1,
 		},
 	}.Run(t)
 }

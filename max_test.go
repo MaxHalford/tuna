@@ -12,6 +12,7 @@ func TestMax(t *testing.T) {
 			),
 			extractor: NewMax("flux"),
 			output:    "flux_max\n4\n",
+			size:      1,
 		},
 	}.Run(t)
 }

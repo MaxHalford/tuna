@@ -12,6 +12,7 @@ func TestMin(t *testing.T) {
 			),
 			extractor: NewMin("flux"),
 			output:    "flux_min\n2\n",
+			size:      1,
 		},
 	}.Run(t)
 }

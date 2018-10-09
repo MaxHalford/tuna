@@ -31,7 +31,7 @@
 
 :warning: I'm working on this for an ongoing Kaggle competition, things are still in flux and the documentation isn't finished
 
-`tuna` is a simple library for computing machine learning features in an online manner. In other words, `tuna` is a streaming ETL. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (*e.g.* a group by followed by a mean) while keeping it simple to build custom features.
+`tuna` is a simple library for computing machine learning features in an online manner. In other words, `tuna` is a streaming ETL. Sometimes datasets are rather large and it isn't convenient to handle them in memory. One approach is to compute running statistics that provide a good approximation of their batch counterparts. The goal of `tuna` is to cover common use cases (e.g. a group by followed by a mean) while keeping it simple to build custom features.
 
 Like many [such libraries](https://github.com/topics/etl), `tuna` involves a few simple concepts:
 
@@ -79,10 +79,10 @@ Grandad,0,3`
     )
 
     // Define a Sink
-    sink, _ := NewCSVSink(os.Stdout)
+    sink := NewCSVSink(os.Stdout)
 
     // Run
-    Run(stream, extractor, sink, 0)
+    Run(stream, extractor, sink, 0) // 0 means we don't display live progress
 }
 ```
 
@@ -95,13 +95,7 @@ bangers_sum,name,£_mean
 3,Rodney,1001.5
 ```
 
-The `Run` method will also display live progress in the console.
-
-```sh
-00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory # This is just an example
-```
-
-## API
+## Usage
 
 :point_up: Please check out the [godoc page](https://godoc.org/github.com/MaxHalford/tuna) in addition to the following documentation.
 
@@ -116,7 +110,7 @@ var r io.Reader // Depends on your application
 s := tuna.NewCSVStream(r)
 ```
 
-Use `NewCSVStreamFromPath` to stream CSV data from file path, it is simply a wrapper on top of `NewCSVStream`.
+Use `NewCSVStreamFromPath` to stream CSV data from a file path, it is simply a wrapper on top of `NewCSVStream`.
 
 ```go
 s := tuna.NewCSVStreamFromPath("path/to/file")
@@ -192,7 +186,7 @@ gb := NewGroupBy(
 )
 ```
 
-You can nest `GroupBy`s if you want to group the data by more than one variable. For example in the following case we're going to count the number of bikes taken along with the number of bikes returned by city and by day.
+You can nest `GroupBy`s if you want to group the data by more than one variable. For example the following `Extractor` will count the number of taken bikes along with the number of returned bikes by city as well as by day.
 
 ```go
 gb := NewGroupBy(
@@ -213,7 +207,7 @@ gb := NewGroupBy(
 
 #### `SequentialGroupBy`
 
-The `GroupBy` can incur a large head if you are computing many statistics and that your data is very large. Indeed at most `n * k` values will have to maintained in memory, where `n` is the number of group keys and `k` is the number of `Extractor`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely fine if you have enough RAM available, it can slow down the computation.
+Using a `GroupBy` can incur a large memory usage if you are computing many statistics on a very large dataset. Indeed at most `n * k` values will have to maintained in memory, where `n` is the number of group keys and `k` is the number of `Extractor`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely fine if you have enough RAM available, it can slow down the computation.
 
 The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This means you only have to maintain `k` in memory. While having ordered data isn't always the case, it does happen. To make the most of this you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for `NewGroupBy`. Every time a new group key is encountered the current statistics are written to the `Sink` and a new `Extractor` is initialised to handle the new group.
 
@@ -231,7 +225,7 @@ sgb := tuna.NewSequentialGroupBy(
 tuna.Run(stream, sgb, nil, 1e6)
 ```
 
-:point_up: If you're using a `SequentialGroupBy` then you don't have to give to provide a `Sink` to the `Run` method. This is because the results will be written every time a new group key is encountered.
+:point_up: If you're using a `SequentialGroupBy` then you don't have to provide a `Sink` to the `Run` method. This is because the results will be written every time a new group key is encountered.
 
 :point_up: Make sure your data is ordered by the group key before using `SequentialGroupBy`. There are various ways to sort a file by a field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
 
@@ -262,6 +256,12 @@ Naturally the easiest way to proceed is to copy/paste one of the existing `Extra
 #### Writing a custom `Sink`
 
 ### The `Run` method
+
+The `Run` method will also display live progress in the console, for example:
+
+```sh
+00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory
+```
 
 ## Roadmap
 

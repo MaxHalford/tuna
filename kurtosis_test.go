@@ -14,6 +14,7 @@ func TestKurtosis(t *testing.T) {
 			),
 			extractor: NewKurtosis("flux"),
 			output:    "flux_kurtosis\n-1.3\n",
+			size:      1,
 		},
 	}.Run(t)
 }
