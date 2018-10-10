@@ -195,7 +195,7 @@ The `NUnique` struct works slightly differently. It's `Parser` field is not a `f
 
 #### `Count`
 
-The `Count` struct doesn't have to parse a field, it simply counts the number of `Row`s it sees. If you use outside a `GroupBy` it will count the number of total `Row`s.
+The `Count` struct doesn't have to parse a field, it simply counts the number of `Row`s it sees. If you use it outside of a `GroupBy` it will simply count the number of total `Row`s. If you use inside a `GroupBy` it will count the number of `Rows` per group.
 
 #### `Diff`
 

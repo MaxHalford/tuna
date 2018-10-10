@@ -20,7 +20,7 @@ func (c *Count) Update(row Row) error {
 func (c Count) Collect() <-chan Row {
 	ch := make(chan Row)
 	go func() {
-		ch <- Row{"count": strconv.FormatUint(c.n, 16)}
+		ch <- Row{"count": strconv.FormatUint(c.n, 10)}
 		close(ch)
 	}()
 	return ch
