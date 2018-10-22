@@ -7,12 +7,12 @@ import (
 	"sort"
 )
 
-// A Sink can persist the output of an Extractor's Collect method.
+// A Sink can persist the output of an Agg's Collect method.
 type Sink interface {
 	Write(rows <-chan Row) error
 }
 
-// CSVSink persist the output of an Extractor's Collect method to a CSV file.
+// CSVSink persist the output of an Agg's Collect method to a CSV file.
 // The columns are ordered in lexical order.
 type CSVSink struct {
 	w    *csv.Writer

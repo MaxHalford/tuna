@@ -3,7 +3,7 @@ package tuna
 import "testing"
 
 func TestNUnique(t *testing.T) {
-	ExtractorTestCases{
+	AggTestCases{
 		{
 			stream: NewStream(
 				Row{"ice-cream": "1", "flavor": "chocolate"},
@@ -12,9 +12,9 @@ func TestNUnique(t *testing.T) {
 				Row{"ice-cream": "2", "flavor": "mango"},
 				Row{"ice-cream": "2", "flavor": "mango"},
 			),
-			extractor: NewGroupBy("ice-cream", func() Extractor { return NewNUnique("flavor") }),
-			output:    "flavor_n_unique,ice-cream\n2,1\n1,2\n",
-			size:      2,
+			agg:    NewGroupBy("ice-cream", func() Agg { return NewNUnique("flavor") }),
+			output: "flavor_n_unique,ice-cream\n2,1\n1,2\n",
+			size:   2,
 		},
 		{
 			stream: NewStream(
@@ -24,9 +24,9 @@ func TestNUnique(t *testing.T) {
 				Row{"ice-cream": "1", "flavor": "coffee"},
 				Row{"ice-cream": "2", "flavor": "mango"},
 			),
-			extractor: NewGroupBy("ice-cream", func() Extractor { return NewNUnique("flavor") }),
-			output:    "flavor_n_unique,ice-cream\n2,1\n1,2\n",
-			size:      2,
+			agg:    NewGroupBy("ice-cream", func() Agg { return NewNUnique("flavor") }),
+			output: "flavor_n_unique,ice-cream\n2,1\n1,2\n",
+			size:   2,
 		},
 		{
 			stream: NewStream(
@@ -36,8 +36,8 @@ func TestNUnique(t *testing.T) {
 				Row{"ice-cream": "2", "flavor": "mango"},
 				Row{"ice-cream": "2", "flavor": "mango"},
 			),
-			extractor: NewGroupBy("ice-cream", func() Extractor { return NewNUnique("flavorr") }),
-			isErr:     true,
+			agg:   NewGroupBy("ice-cream", func() Agg { return NewNUnique("flavorr") }),
+			isErr: true,
 		},
 	}.Run(t)
 }

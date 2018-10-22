@@ -18,10 +18,10 @@ Grandad,0,3`
 	// Define a Stream
 	stream, _ := NewCSVStream(strings.NewReader(in))
 
-	// Define an Extractor
-	extractor := NewGroupBy(
+	// Define an Agg
+	agg := NewGroupBy(
 		"name",
-		func() Extractor {
+		func() Agg {
 			return NewUnion(
 				NewMean("£"),
 				NewSum("bangers"),
@@ -33,7 +33,7 @@ Grandad,0,3`
 	sink := NewCSVSink(os.Stdout)
 
 	// Run
-	Run(stream, extractor, sink, 0)
+	Run(stream, agg, sink, 0)
 
 	// Output:
 	// bangers_sum,name,£_mean

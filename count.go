@@ -4,8 +4,7 @@ import (
 	"strconv"
 )
 
-// Count computes a running kurtosis using an extension of Welford's
-// algorithm.
+// Count computes a running kurtosis using an extension of Welford's algorithm.
 type Count struct {
 	n uint64
 }

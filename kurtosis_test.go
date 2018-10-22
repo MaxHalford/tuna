@@ -3,7 +3,7 @@ package tuna
 import "testing"
 
 func TestKurtosis(t *testing.T) {
-	ExtractorTestCases{
+	AggTestCases{
 		{
 			stream: NewStream(
 				Row{"flux": "1.0"},
@@ -12,9 +12,9 @@ func TestKurtosis(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			extractor: NewKurtosis("flux"),
-			output:    "flux_kurtosis\n-1.3\n",
-			size:      1,
+			agg:    NewKurtosis("flux"),
+			output: "flux_kurtosis\n-1.3\n",
+			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -24,8 +24,8 @@ func TestKurtosis(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			extractor: NewKurtosis("fluxx"),
-			isErr:     true,
+			agg:   NewKurtosis("fluxx"),
+			isErr: true,
 		},
 	}.Run(t)
 }
