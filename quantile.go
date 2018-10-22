@@ -41,10 +41,10 @@ func (qu *Quantile) Update(row Row) error {
 }
 
 // Collect returns the estimated quantiles.
-func (qu Quantile) Collect() <-chan ErrRow {
-	c := make(chan ErrRow)
+func (qu Quantile) Collect() <-chan Row {
+	c := make(chan Row)
 	go func() {
-		r := ErrRow{make(Row), nil}
+		r := make(Row)
 		for _, cp := range qu.CutPoints {
 			r = r.Set(fmt.Sprintf("%sq%s", qu.Prefix, float2Str(cp)), float2Str(qu.Query(cp)))
 		}

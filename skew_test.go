@@ -3,7 +3,7 @@ package tuna
 import "testing"
 
 func TestSkew(t *testing.T) {
-	ExtractorTestCases{
+	AggTestCases{
 		{
 			stream: NewStream(
 				Row{"flux": "1.0"},
@@ -12,9 +12,9 @@ func TestSkew(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			extractor: NewSkew("flux"),
-			output:    "flux_skew\n0\n",
-			size:      1,
+			agg:    NewSkew("flux"),
+			output: "flux_skew\n0\n",
+			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -24,8 +24,8 @@ func TestSkew(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			extractor: NewSkew("fluxx"),
-			isErr:     true,
+			agg:   NewSkew("fluxx"),
+			isErr: true,
 		},
 	}.Run(t)
 }

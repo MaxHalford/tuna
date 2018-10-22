@@ -3,16 +3,16 @@ package tuna
 import "testing"
 
 func TestDiff(t *testing.T) {
-	ExtractorTestCases{
+	AggTestCases{
 		{
 			stream: NewStream(
 				Row{"flux": "1.0"},
 				Row{"flux": "2.0"},
 				Row{"flux": "4.0"},
 			),
-			extractor: NewDiff("flux", func(s string) Extractor { return NewMean(s) }),
-			output:    "flux_diff_mean\n1.5\n",
-			size:      1,
+			agg:    NewDiff("flux", func(s string) Agg { return NewMean(s) }),
+			output: "flux_diff_mean\n1.5\n",
+			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -20,8 +20,8 @@ func TestDiff(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "2.0"},
 			),
-			extractor: NewDiff("fluxx", func(s string) Extractor { return NewMean(s) }),
-			isErr:     true,
+			agg:   NewDiff("fluxx", func(s string) Agg { return NewMean(s) }),
+			isErr: true,
 		},
 	}.Run(t)
 }

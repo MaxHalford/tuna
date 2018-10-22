@@ -8,29 +8,29 @@ import (
 	"github.com/MaxHalford/tuna"
 )
 
-func newExtractor(name, field string) (tuna.Extractor, error) {
-	ex, ok := map[string]tuna.Extractor{
+func newAgg(name, field string) (tuna.Agg, error) {
+	agg, ok := map[string]tuna.Agg{
 		"MAX":  tuna.NewMax(field),
 		"MEAN": tuna.NewMean(field),
 	}[strings.ToUpper(name)]
 	if !ok {
-		return nil, fmt.Errorf("no extractor named '%s'", name)
+		return nil, fmt.Errorf("no agg named '%s'", name)
 	}
-	return ex, nil
+	return agg, nil
 }
 
-func parseExtractor(lit string) (tuna.Extractor, error) {
-	// Check the format is <extractor>(<field>)
+func parseAgg(lit string) (tuna.Agg, error) {
+	// Check the format is <agg>(<field>)
 	matched, err := regexp.MatchString("[[:alpha:]]+\\([[:alnum:]]+\\)", lit)
 	if !matched || err != nil {
-		return nil, fmt.Errorf("couldn't understand '%s', expected a <extractor>(<field>)", lit)
+		return nil, fmt.Errorf("couldn't understand '%s', expected a <agg>(<field>)", lit)
 	}
 
-	// Parse the Extractor name and the field
+	// Parse the Agg name and the field
 	parts := strings.Split(lit, "(")
 	name, field := parts[0], parts[1][:len(parts[1])-1]
 
-	return newExtractor(name, field)
+	return newAgg(name, field)
 }
 
 func newStream(name, path string) (stream tuna.Stream, err error) {
