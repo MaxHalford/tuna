@@ -12,9 +12,8 @@ func TestSkew(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			agg:    NewSkew("flux"),
+			agg:    NewExtractor("flux", NewSkew()),
 			output: "flux_skew\n0\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -24,7 +23,7 @@ func TestSkew(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			agg:   NewSkew("fluxx"),
+			agg:   NewExtractor("fluxx", NewSkew()),
 			isErr: true,
 		},
 	}.Run(t)

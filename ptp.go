@@ -1,42 +1,31 @@
 package tuna
 
-import "fmt"
+import (
+	"math"
+)
 
-// PTP computes (max - min). PTP is the acronym for "peak to peak".
+// PTP computes the minimal value of a column.
 type PTP struct {
-	Parse  func(Row) (float64, error)
-	Prefix string
-	min    *Min
-	max    *Max
+	min float64
+	max float64
 }
 
 // Update PTP given a Row.
-func (ptp *PTP) Update(row Row) error {
-	if err := ptp.min.Update(row); err != nil {
-		return err
-	}
-	return ptp.max.Update(row)
+func (m *PTP) Update(x float64) error {
+	m.min = math.Min(m.min, x)
+	m.max = math.Max(m.max, x)
+	return nil
 }
 
 // Collect returns the current value.
-func (ptp PTP) Collect() <-chan Row {
-	c := make(chan Row)
-	go func() {
-		c <- Row{fmt.Sprintf("%sptp", ptp.Prefix): float2Str(ptp.max.max - ptp.min.min)}
-		close(c)
-	}()
-	return c
+func (m PTP) Collect() map[string]float64 {
+	return map[string]float64{"ptp": m.max - m.min}
 }
 
-// Size is 1.
-func (ptp PTP) Size() uint { return 1 }
-
-// NewPTP returns a PTP that computes the PTP value of a given field.
-func NewPTP(field string) *PTP {
+// NewPTP returns a PTP that computes the mean of a given field.
+func NewPTP() *PTP {
 	return &PTP{
-		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: fmt.Sprintf("%s_", field),
-		min:    NewMin(field),
-		max:    NewMax(field),
+		max: math.Inf(-1),
+		min: math.Inf(1),
 	}
 }

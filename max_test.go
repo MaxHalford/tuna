@@ -10,9 +10,8 @@ func TestMax(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "2.0"},
 			),
-			agg:    NewMax("flux"),
+			agg:    NewExtractor("flux", NewMax()),
 			output: "flux_max\n4\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -20,7 +19,7 @@ func TestMax(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "2.0"},
 			),
-			agg:   NewMax("fluxx"),
+			agg:   NewExtractor("fluxx", NewMax()),
 			isErr: true,
 		},
 	}.Run(t)

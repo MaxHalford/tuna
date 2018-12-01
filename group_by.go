@@ -6,9 +6,10 @@ import (
 
 // GroupBy maintains one Agg instance per group.
 type GroupBy struct {
-	By     string
-	NewAgg func() Agg
-	groups map[string]Agg
+	By          string
+	NewAgg      func() Agg
+	SortResults bool
+	groups      map[string]Agg
 }
 
 // Update updates the Agg of the Row's group.
@@ -26,20 +27,23 @@ func (gb *GroupBy) Update(row Row) error {
 // Collect streams the Collect of each group. The groups are output in the
 // lexical order of their keys.
 func (gb GroupBy) Collect() <-chan Row {
-	// Sort the group keys so that the output is deterministic
 	keys := make([]string, len(gb.groups))
 	var i uint
 	for k := range gb.groups {
 		keys[i] = k
 		i++
 	}
-	sort.Strings(keys)
-
+	// Sort the group keys so that the output is deterministic
+	if gb.SortResults {
+		sort.Strings(keys)
+	}
 	c := make(chan Row)
 	go func() {
 		for _, key := range keys {
 			for r := range gb.groups[key].Collect() {
-				c <- r.Set(gb.By, key)
+				// Add the group key to the results
+				r[gb.By] = key
+				c <- r
 			}
 		}
 		close(c)
@@ -47,22 +51,14 @@ func (gb GroupBy) Collect() <-chan Row {
 	return c
 }
 
-// Size is the sum of the sizes of each group.
-func (gb GroupBy) Size() uint {
-	var s uint
-	for _, g := range gb.groups {
-		s += g.Size()
-	}
-	return s
-}
-
 // NewGroupBy returns a GroupBy that maintains a Agg for each
 // distinct value of a given variable.
 func NewGroupBy(by string, newAgg func() Agg) *GroupBy {
 	return &GroupBy{
-		By:     by,
-		NewAgg: newAgg,
-		groups: make(map[string]Agg),
+		By:          by,
+		NewAgg:      newAgg,
+		SortResults: true,
+		groups:      make(map[string]Agg),
 	}
 }
 
@@ -110,16 +106,13 @@ func (sgb SequentialGroupBy) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
 		for r := range sgb.agg.Collect() {
-			c <- r.Set(sgb.By, sgb.key)
+			// Add the group key to the results
+			r[sgb.By] = sgb.key
+			c <- r
 		}
 		close(c)
 	}()
 	return c
-}
-
-// Size is the size of the current Agg.
-func (sgb SequentialGroupBy) Size() uint {
-	return sgb.agg.Size()
 }
 
 // NewSequentialGroupBy returns a SequentialGroupBy that maintains an Agg

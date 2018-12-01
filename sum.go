@@ -1,41 +1,22 @@
 package tuna
 
-import "fmt"
-
 // Sum computes a running sum.
 type Sum struct {
-	Parse  func(Row) (float64, error)
-	Prefix string
-	sum    float64
+	sum float64
 }
 
 // Update Sum given a Row.
-func (s *Sum) Update(row Row) error {
-	var x, err = s.Parse(row)
-	if err != nil {
-		return err
-	}
+func (s *Sum) Update(x float64) error {
 	s.sum += x
 	return nil
 }
 
 // Collect returns the current value.
-func (s Sum) Collect() <-chan Row {
-	c := make(chan Row)
-	go func() {
-		c <- Row{fmt.Sprintf("%ssum", s.Prefix): float2Str(s.sum)}
-		close(c)
-	}()
-	return c
+func (s Sum) Collect() map[string]float64 {
+	return map[string]float64{"sum": s.sum}
 }
 
-// Size is 1.
-func (s Sum) Size() uint { return 1 }
-
 // NewSum returns a Sum that computes the mean of a given field.
-func NewSum(field string) *Sum {
-	return &Sum{
-		Parse:  func(row Row) (float64, error) { return str2Float(row[field]) },
-		Prefix: fmt.Sprintf("%s_", field),
-	}
+func NewSum() *Sum {
+	return &Sum{}
 }

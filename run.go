@@ -30,11 +30,10 @@ func Run(stream Stream, agg Agg, sink Sink, checkpoint uint) error {
 		if checkpoint > 0 && n%checkpoint == 0 {
 			t := time.Since(t0)
 			p.Printf(
-				"\r%s -- %d rows -- %.0f rows/second -- %d values in memory",
+				"\r%s -- %d rows -- %.0f rows/second",
 				fmtDuration(t),
 				n,
 				float64(n)/t.Seconds(),
-				agg.Size(),
 			)
 		}
 	}

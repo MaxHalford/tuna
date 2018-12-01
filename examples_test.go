@@ -22,10 +22,10 @@ Grandad,0,3`
 	agg := NewGroupBy(
 		"name",
 		func() Agg {
-			return NewUnion(
-				NewMean("£"),
-				NewSum("bangers"),
-			)
+			return Aggs{
+				NewExtractor("£", NewMean()),
+				NewExtractor("bangers", NewSum()),
+			}
 		},
 	)
 

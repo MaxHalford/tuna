@@ -10,9 +10,8 @@ func TestMin(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "2.0"},
 			),
-			agg:    NewMin("flux"),
+			agg:    NewExtractor("flux", NewMin()),
 			output: "flux_min\n2\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -20,7 +19,7 @@ func TestMin(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "2.0"},
 			),
-			agg:   NewMin("fluxx"),
+			agg:   NewExtractor("fluxx", NewMin()),
 			isErr: true,
 		},
 	}.Run(t)

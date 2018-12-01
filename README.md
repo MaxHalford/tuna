@@ -127,7 +127,7 @@ stream := tuna.NewStream(
 
 #### Streaming from multiple sources
 
-The `ZipStreams` method can be used to stream over multiple sources without having to merge them manually. Indeed large datasets are more often than not split into chunks for practical reasons. The issue is that if you're using a `GroupBy` and that the group keys are scattered accross multiple sources, then processing each file individually won't produce the correct result.
+The `ZipStreams` method can be used to stream over multiple sources without having to merge them manually. Indeed large datasets are more often than not split into chunks for practical reasons. The issue is that if you're using a `GroupBy` and that the group keys are scattered across multiple sources, then processing each file individually won't produce the correct result.
 
 To use `ZipStreams` you simply have to provide it with one or more `Stream`s. It will then return a new `Stream` which will iterate over each `Row` of each provided `Stream` until they are all depleted. Naturally you can combine different types of `Stream`s.
 
@@ -199,7 +199,7 @@ The `Count` struct doesn't have to parse a field, it simply counts the number of
 
 #### `Diff`
 
-A common use case that occurs for ordered data is to compute statistics on the differences of consecutive values. For example you might want to compute the average change of a metric. This requires memorising the previous value and feeding the difference with the current value to an `Agg`. You can do this by using the `Diff` struct which has the following signature:
+A common use case that occurs for ordered data is to compute statistics on the differences of consecutive values. For example you might want to compute the average change of a metric. This requires memorizing the previous value and feeding the difference with the current value to an `Agg`. You can do this by using the `Diff` struct which has the following signature:
 
 ```go
 type Diff struct {
@@ -272,7 +272,7 @@ gb := NewGroupBy(
 
 Using a `GroupBy` can incur a large memory usage if you are computing many statistics on a very large dataset. Indeed the spatial complexity is `O(n * k)`, where `n` is the number of group keys and `k` is the number of `Agg`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely manageable if you have enough available RAM, it can still hinder the overall computation time.
 
-The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This leads to an `O(k)` spatial complexity which is much more efficient. While having ordered data isn't always the case, you should make the most of it if it is. To do so you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for the `NewGroupBy` method. Every time a new group key is encountered the current statistics are flushed to the `Sink` and a new `Agg` is initialised to handle the new group.
+The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This leads to an `O(k)` spatial complexity which is much more efficient. While having ordered data isn't always the case, you should make the most of it if it is. To do so you can use the `SequentialGroupBy` struct which can be initialized with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for the `NewGroupBy` method. Every time a new group key is encountered the current statistics are flushed to the `Sink` and a new `Agg` is initialized to handle the new group.
 
 ```go
 stream, _ := NewCSVStreamFromPath("path/to/csv/ordered/by/name")
@@ -352,7 +352,7 @@ checkpoint := 1e5
 err := Run(stream, agg, sink, checkpoint)
 ```
 
-You simply have to provide it with a `Stream`, an `Agg`, and a `Sink`. It will update the `Agg` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Agg` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console everytime the number of parsed rows is a multiple of `checkpoint`, e.g.
+You simply have to provide it with a `Stream`, an `Agg`, and a `Sink`. It will update the `Agg` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Agg` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console every time the number of parsed rows is a multiple of `checkpoint`, e.g.
 
 ```sh
 00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory
