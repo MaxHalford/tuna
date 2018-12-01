@@ -3,7 +3,7 @@ package tuna
 import "testing"
 
 func TestSum(t *testing.T) {
-	ExtractorTestCases{
+	AggTestCases{
 		{
 			stream: ZipStreams(
 				NewStream(
@@ -17,9 +17,9 @@ func TestSum(t *testing.T) {
 					Row{"flux": "3.0"},
 				),
 			),
-			extractor: NewSum("flux"),
-			output:    "flux_sum\n9\n",
-			size:      1,
+			agg:    NewSum("flux"),
+			output: "flux_sum\n9\n",
+			size:   1,
 		},
 		{
 			stream: ZipStreams(
@@ -34,8 +34,8 @@ func TestSum(t *testing.T) {
 					Row{"flux": "3.0"},
 				),
 			),
-			extractor: NewSum("fluxx"),
-			isErr:     true,
+			agg:   NewSum("fluxx"),
+			isErr: true,
 		},
 	}.Run(t)
 }

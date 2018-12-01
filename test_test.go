@@ -6,20 +6,20 @@ import (
 	"testing"
 )
 
-// An ExtractorTestCase is a generic way to test the output of a Extractor.
-type ExtractorTestCase struct {
-	stream    Stream
-	extractor Extractor
-	isErr     bool
-	output    string
-	size      uint
+// An AggTestCase is a generic way to test the output of a Agg.
+type AggTestCase struct {
+	stream Stream
+	agg    Agg
+	isErr  bool
+	output string
+	size   uint
 }
 
-// Run runs the Extractor against then Stream and then checks the
+// Run runs the Agg against then Stream and then checks the
 // results of the Collect method.
-func (tc ExtractorTestCase) Run(t *testing.T) {
-	// Go through the Rows and update the Extractor
-	err := Run(tc.stream, tc.extractor, nil, 0)
+func (tc AggTestCase) Run(t *testing.T) {
+	// Go through the Rows and update the Agg
+	err := Run(tc.stream, tc.agg, nil, 0)
 
 	// Check the error
 	if err == nil {
@@ -38,25 +38,25 @@ func (tc ExtractorTestCase) Run(t *testing.T) {
 	// Collect and check the output
 	b := &strings.Builder{}
 	sink := NewCSVSink(b)
-	sink.Write(tc.extractor.Collect())
+	sink.Write(tc.agg.Collect())
 	output := b.String()
 	if output != tc.output {
 		t.Errorf("got:\n%swant:\n%s", output, tc.output)
 	}
 
 	// Check the size
-	size := tc.extractor.Size()
+	size := tc.agg.Size()
 	if size != tc.size {
 		t.Errorf("got: %d, want: %d\n", size, tc.size)
 	}
 }
 
-// ExtractorTestCases is a ExtractorTestCase slice, it's just here for
+// AggTestCases is a AggTestCase slice, it's just here for
 // convenience.
-type ExtractorTestCases []ExtractorTestCase
+type AggTestCases []AggTestCase
 
 // Run the test cases.
-func (etcs ExtractorTestCases) Run(t *testing.T) {
+func (etcs AggTestCases) Run(t *testing.T) {
 	for i, tc := range etcs {
 		t.Run(fmt.Sprintf("Test case %d", i), func(t *testing.T) { tc.Run(t) })
 	}

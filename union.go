@@ -1,26 +1,26 @@
 package tuna
 
-// A Union maintains multiple Extractors in parallel.
+// A Union maintains multiple Aggs in parallel.
 type Union struct {
-	Extractors []Extractor
+	Aggs []Agg
 }
 
-// Update each Extractor given a Row.
+// Update each Agg given a Row.
 func (u *Union) Update(row Row) error {
-	for i := range u.Extractors {
-		if err := u.Extractors[i].Update(row); err != nil {
+	for i := range u.Aggs {
+		if err := u.Aggs[i].Update(row); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Collect concatenates the output of each Extractor's Collect call.
+// Collect concatenates the output of each Agg's Collect call.
 func (u Union) Collect() <-chan Row {
 	c := make(chan Row)
 	go func() {
 		row := make(Row)
-		for _, ex := range u.Extractors {
+		for _, ex := range u.Aggs {
 			for r := range ex.Collect() {
 				for k, v := range r {
 					row[k] = v
@@ -33,20 +33,20 @@ func (u Union) Collect() <-chan Row {
 	return c
 }
 
-// Size is the sum of the sizes of each Extractor.
+// Size is the sum of the sizes of each Agg.
 func (u Union) Size() uint {
 	var s uint
-	for _, ex := range u.Extractors {
+	for _, ex := range u.Aggs {
 		s += ex.Size()
 	}
 	return s
 }
 
-// NewUnion returns a Union with the given Extractors.
-func NewUnion(exs ...Extractor) *Union {
-	var union = &Union{Extractors: make([]Extractor, len(exs))}
+// NewUnion returns a Union with the given Aggs.
+func NewUnion(exs ...Agg) *Union {
+	var union = &Union{Aggs: make([]Agg, len(exs))}
 	for i, ex := range exs {
-		union.Extractors[i] = ex
+		union.Aggs[i] = ex
 	}
 	return union
 }

@@ -35,8 +35,8 @@ Like many [such libraries](https://github.com/topics/etl), `tuna` involves a few
 
 - A `Row` is a set of (key, value) pairs (represented in Go with a `map[string]string`)
 - A `Stream` is a source of data that returns `Row`s one by one
-- An `Extractor` is fed `Rows` one by one and maintains one or more running statistics
-- A `Sink` persists the output of an `Extractor`
+- An `Agg` is fed `Rows` one by one and maintains one or more running statistics
+- A `Sink` persists the output of an `Agg`
 
 You can then use the `Run` method to stitch these together.
 
@@ -65,10 +65,10 @@ Grandad,0,3`
     // Define a Stream
     stream, _ := NewCSVStream(strings.NewReader(in))
 
-    // Define an Extractor
-    extractor := NewGroupBy(
+    // Define an Agg
+    agg := NewGroupBy(
         "name",
-        func() Extractor {
+        func() Agg {
             return NewUnion(
                 NewMean("£"),
                 NewSum("bangers"),
@@ -80,7 +80,7 @@ Grandad,0,3`
     sink := NewCSVSink(os.Stdout)
 
     // Run
-    Run(stream, extractor, sink, 0) // 0 means we don't display live progress
+    Run(stream, agg, sink, 0) // 0 means we don't display live progress
 }
 ```
 
@@ -159,11 +159,11 @@ type ErrRow struct {
 
 A `Row` is nothing more than a `map[string]string`. The `Err` fields indicates if something went wrong during the retrieval of the corresponding `Row`.
 
-### Extractors
+### Aggs
 
 #### Basic aggregators
 
-All of the following `Extractor`s work the same way:
+All of the following `Agg`s work the same way:
 
 - `Mean`
 - `Variance`
@@ -187,7 +187,7 @@ type Max struct {
 
 The `Parse` method determines how to parse an incoming `Row`. This allows doing fancy things, for example you could parse a field as a `float64` and then apply a logarithmic transform to it. The `Prefix` string determines what prefix should be used when the results are collected. For example setting a `candy_` prefix with the `Max` struct will use `candy_max` as a result name.
 
-:warning: It isn't recommended to instantiate an `Extractor` yourself. Calling the `New` methods will set initial values which are required for obtaining correct results. If you want to modify the `Parse` or the `Prefix` fields then you can set them after calling the `New` method.
+:warning: It isn't recommended to instantiate an `Agg` yourself. Calling the `New` methods will set initial values which are required for obtaining correct results. If you want to modify the `Parse` or the `Prefix` fields then you can set them after calling the `New` method.
 
 #### `NUnique`
 
@@ -199,25 +199,25 @@ The `Count` struct doesn't have to parse a field, it simply counts the number of
 
 #### `Diff`
 
-A common use case that occurs for ordered data is to compute statistics on the differences of consecutive values. For example you might want to compute the average change of a metric. This requires memorising the previous value and feeding the difference with the current value to an `Extractor`. You can do this by using the `Diff` struct which has the following signature:
+A common use case that occurs for ordered data is to compute statistics on the differences of consecutive values. For example you might want to compute the average change of a metric. This requires memorising the previous value and feeding the difference with the current value to an `Agg`. You can do this by using the `Diff` struct which has the following signature:
 
 ```go
 type Diff struct {
     Parse     func(Row) (float64, error)
-    Extractor Extractor
+    Agg Agg
     FieldName string
 }
 ```
 
-The `Parse` method tells the `Diff` how to parse an incoming `Row`. The current value will be stored and updated each time a new `Row` comes in. When this happens a new field will be set on the `Row`, which will be then be processed through the `Extractor`.  The `FieldName` string determines the name of this new field. It's important **that the `Extractor` parsed the field named `FieldName`**. For convenience you can use the `NewDiff` method if you don't have to do any fancy processing.
+The `Parse` method tells the `Diff` how to parse an incoming `Row`. The current value will be stored and updated each time a new `Row` comes in. When this happens a new field will be set on the `Row`, which will be then be processed through the `Agg`.  The `FieldName` string determines the name of this new field. It's important **that the `Agg` parsed the field named `FieldName`**. For convenience you can use the `NewDiff` method if you don't have to do any fancy processing.
 
 :point_up: Make sure your data is ordered in the right way before using `Diff`. There are various ways to sort a file by a given field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
 
 #### `Union`
 
-Most use cases usually involve computing multiple statistics. One way would be to define a single `Extractor` which computes several statistics simultaneously. While this is computationally efficient and allows reusing computed values, it leads to writing application specific code that can be difficult to maintain.
+Most use cases usually involve computing multiple statistics. One way would be to define a single `Agg` which computes several statistics simultaneously. While this is computationally efficient and allows reusing computed values, it leads to writing application specific code that can be difficult to maintain.
 
-Another way is to define a slice of `Extractors`s and loop over each one of them every time a new `Row` comes in. This is exactly what the `Union` struct does. You can use the [variadic](https://gobyexample.com/variadic-functions) `NewUnion` method to instantiate a `Union`.
+Another way is to define a slice of `Aggs`s and loop over each one of them every time a new `Row` comes in. This is exactly what the `Union` struct does. You can use the [variadic](https://gobyexample.com/variadic-functions) `NewUnion` method to instantiate a `Union`.
 
 ```go
 union := NewUnion(NewMean("flux"), NewSum("flux"))
@@ -229,7 +229,7 @@ You can think of this as [composition](https://www.wikiwand.com/en/Function_comp
 
 Computing running statistics is nice but in practice you probably want to compute conditional statistics. In other words you want to "group" the incoming values by a given variable and compute one or more statistics inside each group. This is what the `GroupBy` struct is intended for.
 
-You can use the `NewGroupBy` method to instantiate a `GroupBy`, it takes as arguments a `string` which tells it by what field to group the data and a `func() Extractor` callable which returns an `Extractor`. Every time a new key appears the callable will be used to instantiate a new `Extractor` for the new group.
+You can use the `NewGroupBy` method to instantiate a `GroupBy`, it takes as arguments a `string` which tells it by what field to group the data and a `func() Agg` callable which returns an `Agg`. Every time a new key appears the callable will be used to instantiate a new `Agg` for the new group.
 
 ```go
 gb := NewGroupBy("name", func() Estimator { return NewSum("£") })
@@ -240,7 +240,7 @@ A nice thing is that you can use `Union`s together with `GroupBy`s. This will co
 ```go
 gb := NewGroupBy(
     "name",
-    func() Extractor {
+    func() Agg {
         return NewUnion(
             NewMean("£"),
             NewSum("bangers"),
@@ -249,7 +249,7 @@ gb := NewGroupBy(
 )
 ```
 
-You can nest `GroupBy`s if you want to group the data by more than one variable. For example the following `Extractor` will count the number of taken bikes along with the number of returned bikes by city as well as by day.
+You can nest `GroupBy`s if you want to group the data by more than one variable. For example the following `Agg` will count the number of taken bikes along with the number of returned bikes by city as well as by day.
 
 ```go
 gb := NewGroupBy(
@@ -270,9 +270,9 @@ gb := NewGroupBy(
 
 #### `SequentialGroupBy`
 
-Using a `GroupBy` can incur a large memory usage if you are computing many statistics on a very large dataset. Indeed the spatial complexity is `O(n * k)`, where `n` is the number of group keys and `k` is the number of `Extractor`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely manageable if you have enough available RAM, it can still hinder the overall computation time.
+Using a `GroupBy` can incur a large memory usage if you are computing many statistics on a very large dataset. Indeed the spatial complexity is `O(n * k)`, where `n` is the number of group keys and `k` is the number of `Agg`s. This can potentially become quite large, especially if you're using nested `GroupBy`s. While this is completely manageable if you have enough available RAM, it can still hinder the overall computation time.
 
-The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This leads to an `O(k)` spatial complexity which is much more efficient. While having ordered data isn't always the case, you should make the most of it if it is. To do so you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for the `NewGroupBy` method. Every time a new group key is encountered the current statistics are flushed to the `Sink` and a new `Extractor` is initialised to handle the new group.
+The trick is that **if your data is ordered by the group key then you only have to store the running statistics for one group at a time**. This leads to an `O(k)` spatial complexity which is much more efficient. While having ordered data isn't always the case, you should make the most of it if it is. To do so you can use the `SequentialGroupBy` struct which can be initialised with the `NewSequentialGroupBy` method. It takes as argument a `Sink` in addition to the arguments used for the `NewGroupBy` method. Every time a new group key is encountered the current statistics are flushed to the `Sink` and a new `Agg` is initialised to handle the new group.
 
 ```go
 stream, _ := NewCSVStreamFromPath("path/to/csv/ordered/by/name")
@@ -281,7 +281,7 @@ sink, _ := tuna.NewCSVSinkFromPath("path/to/sink")
 
 sgb := tuna.NewSequentialGroupBy(
     "name",
-    func() Extractor { return NewMean("bangers") }
+    func() Agg { return NewMean("bangers") }
     sink
 )
 
@@ -292,12 +292,12 @@ tuna.Run(stream, sgb, nil, 1e6)
 
 :point_up: Make sure your data is ordered by the group key before using `SequentialGroupBy`. There are various ways to sort a file by a given field, one of them being the [Unix `sort` command](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sort.html).
 
-#### Writing a custom `Extractor`
+#### Writing a custom `Agg`
 
-A feature extractor has to implement the following interface.
+A feature agg has to implement the following interface.
 
 ```go
-type Extractor interface {
+type Agg interface {
     Update(Row) error
     Collect() <-chan Row
     Size() uint
@@ -306,19 +306,19 @@ type Extractor interface {
 
 The `Update` method updates the running statistic that is being computed.
 
-The `Collect` method returns a channel that streams `Row`s. Each such `Row` will be persisted to a `Sink`. Most `Extractor`s only return a single `Row`. For example `Mean` returns a `Row` with one key named `"mean_<field>"` and one value representing the estimated mean. `GroupBy`, however, returns multiple `Row`s (one per group).
+The `Collect` method returns a channel that streams `Row`s. Each such `Row` will be persisted to a `Sink`. Most `Agg`s only return a single `Row`. For example `Mean` returns a `Row` with one key named `"mean_<field>"` and one value representing the estimated mean. `GroupBy`, however, returns multiple `Row`s (one per group).
 
-The `Size` method is simply here to monitor the number of computed values. Most `Extractor`s simply return `1` whereas `GroupBy` returns the sum of the sizes of each group.
+The `Size` method is simply here to monitor the number of computed values. Most `Agg`s simply return `1` whereas `GroupBy` returns the sum of the sizes of each group.
 
-Naturally the easiest way to proceed is to copy/paste one of the existing `Extractor`s and then edit it.
+Naturally the easiest way to proceed is to copy/paste one of the existing `Agg`s and then edit it.
 
-:point_up: You can return a `ErrUnknownField` in case your `Extractor`'s tries to access a non-existing `Row` field in it's `Update` method.
+:point_up: You can return a `ErrUnknownField` in case your `Agg`'s tries to access a non-existing `Row` field in it's `Update` method.
 
 ### Sinks
 
 #### `CSVSink`
 
-You can use a `CSVSink` struct to write the results of an `Extractor` to a CSV file. It will write one line per `Row` returned by the `Extractor`'s `Collect` method. Use the `NewCSVSink` method to instantiate a `CSVSink` that writes to a given `io.Writer`.
+You can use a `CSVSink` struct to write the results of an `Agg` to a CSV file. It will write one line per `Row` returned by the `Agg`'s `Collect` method. Use the `NewCSVSink` method to instantiate a `CSVSink` that writes to a given `io.Writer`.
 
 ```go
 var w io.Reader // Depends on your application
@@ -349,10 +349,10 @@ Using the `Run` method is quite straightforward.
 
 ```go
 checkpoint := 1e5
-err := Run(stream, extractor, sink, checkpoint)
+err := Run(stream, agg, sink, checkpoint)
 ```
 
-You simply have to provide it with a `Stream`, an `Extractor`, and a `Sink`. It will update the `Extractor` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Extractor` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console everytime the number of parsed rows is a multiple of `checkpoint`, e.g.
+You simply have to provide it with a `Stream`, an `Agg`, and a `Sink`. It will update the `Agg` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Agg` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console everytime the number of parsed rows is a multiple of `checkpoint`, e.g.
 
 ```sh
 00:00:02 -- 300,000 rows -- 179,317 rows/second -- 78 values in memory
@@ -365,7 +365,7 @@ You simply have to provide it with a `Stream`, an `Extractor`, and a `Sink`. It 
 - [Running median](https://rhettinger.wordpress.com/tag/running-median/) (and quantiles!)
 - DSL
 - CLI tool based on the DSL
-- Maybe handle dependencies between extractors (for example `Variance` could reuse `Mean`)
+- Maybe handle dependencies between aggs (for example `Variance` could reuse `Mean`)
 - Benchmark and identify bottlenecks
 
 ## License
