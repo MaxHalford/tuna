@@ -23,7 +23,7 @@ Grandad,0,3`
 		"name",
 		func() Agg {
 			return Aggs{
-				NewExtractor("£", NewMean()),
+				NewExtractor("£", NewMean(), NewSum()),
 				NewExtractor("bangers", NewSum()),
 			}
 		},
@@ -36,8 +36,8 @@ Grandad,0,3`
 	Run(stream, agg, sink, 0)
 
 	// Output:
-	// bangers_sum,name,£_mean
-	// 1,Del Boy,0
-	// 3,Grandad,0
-	// 3,Rodney,1001.5
+	// bangers_sum,name,£_mean,£_sum
+	// 1,Del Boy,0,0
+	// 3,Grandad,0,0
+	// 3,Rodney,1001.5,2003
 }

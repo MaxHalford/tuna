@@ -9,8 +9,8 @@ import (
 // a Metric.
 type Extractor struct {
 	Extract func(row Row) (float64, error)
-	Prefix  string
 	Metric  Metric
+	Prefix  string
 }
 
 // Update parses the Row using Extract and feeds the result to Metric.
