@@ -37,15 +37,14 @@ func Run(stream Stream, agg Agg, sink Sink, checkpoint uint) error {
 			)
 		}
 	}
-	// If there was no checkpoint and that there is a sink then the data has to
-	// be written
-	if checkpoint == 0 && sink != nil {
+	// If there is a sink then the data has to be written
+	if sink != nil {
 		if err := sink.Write(agg.Collect()); err != nil {
 			return err
 		}
 	}
-	// If the agg is a SequentialGroupBy then the last group hasn't been
-	// written down yet
+	// If agg is a SequentialGroupBy then the last group hasn't been written
+	// down yet
 	if sgb, ok := agg.(*SequentialGroupBy); ok {
 		if err := sgb.Flush(); err != nil {
 			return err

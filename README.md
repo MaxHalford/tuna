@@ -317,7 +317,7 @@ checkpoint := 1e5
 err := Run(stream, agg, sink, checkpoint)
 ```
 
-You simply have to provide it with a `Stream`, an `Agg`, and a `Sink`. It will update the `Agg` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Agg` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console every time the number of parsed rows is a multiple of `checkpoint`, e.g.
+You simply have to provide it with a `Stream`, an `Agg`, and a `Sink`. It will feed the `Agg` with the `Row`s produced by the `Stream` one by one. Once the `Stream` is depleted the results of the `Agg` will be written to the `Sink`. An `error` will be returned if anything goes wrong along the way. The `Run` method will also display live progress in the console every time the number of parsed rows is a multiple of `checkpoint`, e.g.
 
 ```sh
 00:00:02 -- 300,000 rows -- 179,317 rows/second
