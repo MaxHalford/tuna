@@ -2,54 +2,35 @@ package tuna
 
 import "fmt"
 
-// Diff runs a Agg on the (x[i+1] - x[i]) version of a stream of values. This
+// Diff runs an Agg on the (x[i+1] - x[i]) version of a stream of values. This
 // can be used in conjunction with a GroupBy to compute rolling statistics.
 type Diff struct {
-	Parse     func(Row) (float64, error)
-	Agg       Agg
-	FieldName string
-	seen      bool
-	xi        float64
+	Metric Metric
+	seen   bool
+	xi     float64
 }
 
 // Update Diff given a Row.
-func (d *Diff) Update(row Row) error {
-	var x, err = d.Parse(row)
-	if err != nil {
-		return err
-	}
+func (d *Diff) Update(x float64) error {
 	if !d.seen {
 		d.xi = x
 		d.seen = true
 		return nil
 	}
-	row[d.FieldName] = float2Str(x - d.xi)
-	d.xi = x
-	return d.Agg.Update(row)
+	defer func() { d.xi = x }()
+	return d.Metric.Update(x - d.xi)
 }
 
 // Collect returns the current value.
-func (d Diff) Collect() <-chan Row {
-	c := make(chan Row)
-	go func() {
-		for r := range d.Agg.Collect() {
-			c <- r
-		}
-		close(c)
-	}()
-	return c
+func (d Diff) Collect() map[string]float64 {
+	var r = make(map[string]float64)
+	for k, v := range d.Metric.Collect() {
+		r[fmt.Sprintf("diff_%s", k)] = v
+	}
+	return r
 }
 
-// Size is the size of the Agg.
-func (d Diff) Size() uint { return d.Agg.Size() }
-
-// NewDiff returns a Diff that applies a Agg to the difference of
-// a given field.
-func NewDiff(field string, newAgg func(s string) Agg) *Diff {
-	fn := fmt.Sprintf("%s_diff", field)
-	return &Diff{
-		Parse:     func(row Row) (float64, error) { return str2Float(row[field]) },
-		Agg:       newAgg(fn),
-		FieldName: fn,
-	}
+// NewDiff returns a Diff.
+func NewDiff(m Metric) *Diff {
+	return &Diff{Metric: m}
 }

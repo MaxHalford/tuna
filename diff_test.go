@@ -10,9 +10,8 @@ func TestDiff(t *testing.T) {
 				Row{"flux": "2.0"},
 				Row{"flux": "4.0"},
 			),
-			agg:    NewDiff("flux", func(s string) Agg { return NewMean(s) }),
+			agg:    NewExtractor("flux", NewDiff(NewMean())),
 			output: "flux_diff_mean\n1.5\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -20,7 +19,7 @@ func TestDiff(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "2.0"},
 			),
-			agg:   NewDiff("fluxx", func(s string) Agg { return NewMean(s) }),
+			agg:   NewExtractor("fluxx", NewDiff(NewMean())),
 			isErr: true,
 		},
 	}.Run(t)

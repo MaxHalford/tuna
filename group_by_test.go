@@ -17,9 +17,8 @@ func TestGroupBy(t *testing.T) {
 				Row{"key": "b", "flux": "-2.0"},
 				Row{"key": "b", "flux": "-3.0"},
 			),
-			agg:    NewGroupBy("key", func() Agg { return NewMean("flux") }),
+			agg:    NewGroupBy("key", func() Agg { return NewExtractor("flux", NewMean()) }),
 			output: "flux_mean,key\n2,a\n-2,b\n",
-			size:   2,
 		},
 		{
 			stream: NewStream(
@@ -30,9 +29,8 @@ func TestGroupBy(t *testing.T) {
 				Row{"key": "a", "flux": "2.0"},
 				Row{"key": "a", "flux": "3.0"},
 			),
-			agg:    NewGroupBy("key", func() Agg { return NewMean("flux") }),
+			agg:    NewGroupBy("key", func() Agg { return NewExtractor("flux", NewMean()) }),
 			output: "flux_mean,key\n2,a\n-2,b\n",
-			size:   2,
 		},
 		{
 			stream: NewStream(
@@ -43,9 +41,8 @@ func TestGroupBy(t *testing.T) {
 				Row{"key": "b", "flux": "-3.0"},
 				Row{"key": "a", "flux": "2.0"},
 			),
-			agg:    NewGroupBy("key", func() Agg { return NewMean("flux") }),
+			agg:    NewGroupBy("key", func() Agg { return NewExtractor("flux", NewMean()) }),
 			output: "flux_mean,key\n2,a\n-2,b\n",
-			size:   2,
 		},
 		{
 			stream: NewStream(
@@ -58,12 +55,9 @@ func TestGroupBy(t *testing.T) {
 			),
 			agg: NewGroupBy(
 				"key",
-				func() Agg {
-					return NewDiff("flux", func(s string) Agg { return NewMean(s) })
-				},
+				func() Agg { return NewExtractor("flux", NewDiff(NewMean())) },
 			),
 			output: "flux_diff_mean,key\n1.5,a\n0.5,b\n",
-			size:   2,
 		},
 		{
 			stream: NewStream(
@@ -76,17 +70,9 @@ func TestGroupBy(t *testing.T) {
 			),
 			agg: NewGroupBy(
 				"key",
-				func() Agg {
-					return NewDiff(
-						"flux",
-						func(s string) Agg {
-							return NewUnion(NewMean(s), NewSum(s))
-						},
-					)
-				},
+				func() Agg { return NewExtractor("flux", NewDiff(Metrics{NewMean(), NewSum()})) },
 			),
 			output: "flux_diff_mean,flux_diff_sum,key\n1.5,3,a\n0.5,1,b\n",
-			size:   4,
 		},
 		{
 			stream: NewStream(
@@ -99,9 +85,7 @@ func TestGroupBy(t *testing.T) {
 			),
 			agg: NewGroupBy(
 				"keyy",
-				func() Agg {
-					return NewDiff("flux", func(s string) Agg { return NewMean(s) })
-				},
+				func() Agg { return NewExtractor("flux", NewDiff(NewMean())) },
 			),
 			isErr: true,
 		},
@@ -116,7 +100,7 @@ func TestGroupBy(t *testing.T) {
 			),
 			agg: NewGroupBy(
 				"key",
-				func() Agg { return NewUnion(NewMean("flux"), NewSum("fluxx")) },
+				func() Agg { return NewExtractor("fluxx", NewDiff(Metrics{NewMean(), NewSum()})) },
 			),
 			isErr: true,
 		},
@@ -144,9 +128,8 @@ func TestSequentialGroupBy(t *testing.T) {
 				Row{"key": "b", "flux": "-3.0"},
 			),
 			key:    "key",
-			newAgg: func() Agg { return NewMean("flux") },
+			newAgg: func() Agg { return NewExtractor("flux", NewMean()) },
 			output: "flux_mean,key\n2,a\n-2,b\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -158,9 +141,8 @@ func TestSequentialGroupBy(t *testing.T) {
 				Row{"key": "a", "flux": "3.0"},
 			),
 			key:    "key",
-			newAgg: func() Agg { return NewMean("flux") },
+			newAgg: func() Agg { return NewExtractor("flux", NewMean()) },
 			output: "flux_mean,key\n-2,b\n2,a\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -172,7 +154,7 @@ func TestSequentialGroupBy(t *testing.T) {
 				Row{"key": "a", "flux": "3.0"},
 			),
 			key:    "keyy",
-			newAgg: func() Agg { return NewMean("flux") },
+			newAgg: func() Agg { return NewExtractor("flux", NewMean()) },
 			isErr:  true,
 		},
 		{
@@ -185,7 +167,7 @@ func TestSequentialGroupBy(t *testing.T) {
 				Row{"key": "a", "flux": "3.0"},
 			),
 			key:    "key",
-			newAgg: func() Agg { return NewMean("fluxx") },
+			newAgg: func() Agg { return NewExtractor("fluxx", NewMean()) },
 			isErr:  true,
 		},
 	}
@@ -214,12 +196,6 @@ func TestSequentialGroupBy(t *testing.T) {
 			output := b.String()
 			if output != tc.output {
 				t.Errorf("got:\n%swant:\n%s", output, tc.output)
-			}
-
-			// Check the size
-			size := sgb.Size()
-			if size != tc.size {
-				t.Errorf("got: %d, want: %d\n", size, tc.size)
 			}
 		})
 	}

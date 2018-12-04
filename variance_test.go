@@ -10,9 +10,8 @@ func TestVariance(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "-2.0"},
 			),
-			agg:    NewVariance("flux"),
+			agg:    NewExtractor("flux", NewVariance()),
 			output: "flux_variance\n6\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -20,7 +19,7 @@ func TestVariance(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "-2.0"},
 			),
-			agg:   NewVariance("fluxx"),
+			agg:   NewExtractor("fluxx", NewVariance()),
 			isErr: true,
 		},
 	}.Run(t)

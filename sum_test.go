@@ -17,9 +17,8 @@ func TestSum(t *testing.T) {
 					Row{"flux": "3.0"},
 				),
 			),
-			agg:    NewSum("flux"),
+			agg:    NewExtractor("flux", NewSum()),
 			output: "flux_sum\n9\n",
-			size:   1,
 		},
 		{
 			stream: ZipStreams(
@@ -34,7 +33,7 @@ func TestSum(t *testing.T) {
 					Row{"flux": "3.0"},
 				),
 			),
-			agg:   NewSum("fluxx"),
+			agg:   NewExtractor("fluxx", NewSkew()),
 			isErr: true,
 		},
 	}.Run(t)

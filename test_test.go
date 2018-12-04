@@ -12,10 +12,9 @@ type AggTestCase struct {
 	agg    Agg
 	isErr  bool
 	output string
-	size   uint
 }
 
-// Run runs the Agg against then Stream and then checks the
+// Run runs the Metric against then Stream and then checks the
 // results of the Collect method.
 func (tc AggTestCase) Run(t *testing.T) {
 	// Go through the Rows and update the Agg
@@ -42,12 +41,6 @@ func (tc AggTestCase) Run(t *testing.T) {
 	output := b.String()
 	if output != tc.output {
 		t.Errorf("got:\n%swant:\n%s", output, tc.output)
-	}
-
-	// Check the size
-	size := tc.agg.Size()
-	if size != tc.size {
-		t.Errorf("got: %d, want: %d\n", size, tc.size)
 	}
 }
 

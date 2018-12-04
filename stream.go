@@ -22,6 +22,19 @@ func NewStream(rows ...Row) Stream {
 	return s
 }
 
+// NewFuncStream returns a Stream that calls function n times and returns the
+// resulting Rows.
+func NewFuncStream(f func() Row, n uint) Stream {
+	s := make(Stream)
+	go func() {
+		for i := uint(0); i < n; i++ {
+			s <- ErrRow{f(), nil}
+		}
+		close(s)
+	}()
+	return s
+}
+
 // NewCSVStream returns a Stream from an io.Reader that reads strings that are
 // assumed to CSV-parsable.
 func NewCSVStream(reader io.Reader) (Stream, error) {

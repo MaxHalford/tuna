@@ -30,23 +30,21 @@ func Run(stream Stream, agg Agg, sink Sink, checkpoint uint) error {
 		if checkpoint > 0 && n%checkpoint == 0 {
 			t := time.Since(t0)
 			p.Printf(
-				"\r%s -- %d rows -- %.0f rows/second -- %d values in memory",
+				"\r%s -- %d rows -- %.0f rows/second",
 				fmtDuration(t),
 				n,
 				float64(n)/t.Seconds(),
-				agg.Size(),
 			)
 		}
 	}
-	// If there was no checkpoint and that there is a sink then the data has to
-	// be written
-	if checkpoint == 0 && sink != nil {
+	// If there is a sink then the data has to be written
+	if sink != nil {
 		if err := sink.Write(agg.Collect()); err != nil {
 			return err
 		}
 	}
-	// If the agg is a SequentialGroupBy then the last group hasn't been
-	// written down yet
+	// If agg is a SequentialGroupBy then the last group hasn't been written
+	// down yet
 	if sgb, ok := agg.(*SequentialGroupBy); ok {
 		if err := sgb.Flush(); err != nil {
 			return err

@@ -12,9 +12,8 @@ func TestKurtosis(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			agg:    NewKurtosis("flux"),
+			agg:    NewExtractor("flux", NewKurtosis()),
 			output: "flux_kurtosis\n-1.3\n",
-			size:   1,
 		},
 		{
 			stream: NewStream(
@@ -24,7 +23,7 @@ func TestKurtosis(t *testing.T) {
 				Row{"flux": "4.0"},
 				Row{"flux": "5.0"},
 			),
-			agg:   NewKurtosis("fluxx"),
+			agg:   NewExtractor("fluxx", NewKurtosis()),
 			isErr: true,
 		},
 	}.Run(t)
