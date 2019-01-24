@@ -27,6 +27,7 @@ func (gb *GroupBy) Update(row Row) error {
 // Collect streams the Collect of each group. The groups are output in the
 // lexical order of their keys.
 func (gb GroupBy) Collect() <-chan Row {
+	// We first list the existing group keys
 	keys := make([]string, len(gb.groups))
 	var i uint
 	for k := range gb.groups {
